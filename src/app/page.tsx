@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { DailyGoalsCard } from "@/components/dashboard/DailyGoalsCard";
 import { HeroCard } from "@/components/dashboard/HeroCard";
+import { OverdueGoalsCard } from "@/components/dashboard/OverdueGoalsCard";
 import { ProgressCard } from "@/components/dashboard/ProgressCard";
 import { QuickStats } from "@/components/dashboard/QuickStats";
 import { QuoteCard } from "@/components/dashboard/QuoteCard";
@@ -66,6 +67,11 @@ export default function DashboardPage() {
       ),
     [goals, today],
   );
+  const overdueGoals = useMemo(
+    () =>
+      goals.filter((goal) => goal.goal_date < today && !goal.completed),
+    [goals, today],
+  );
   const todayStats = useMemo(() => goalStats(todayGoals), [todayGoals]);
   const dueGoals = useMemo(
     () => goals.filter((goal) => goal.goal_date <= today),
@@ -109,7 +115,10 @@ export default function DashboardPage() {
           <XPCard totalXp={xp} />
         </div>
       </div>
-      <UpcomingGoalsCard goals={upcomingGoals} />
+      <div className="grid gap-6 xl:grid-cols-2">
+        <UpcomingGoalsCard goals={upcomingGoals} />
+        <OverdueGoalsCard goals={overdueGoals} />
+      </div>
       <div className="grid gap-6">
         <QuoteCard quote={entry?.quote} />
         <SummaryCard entry={entry} />

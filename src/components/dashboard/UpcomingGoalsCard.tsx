@@ -2,7 +2,7 @@ import { CalendarDays } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { DailyGoal } from "@/lib/types";
-import { dailyGoalGroups } from "@/lib/utils/xp";
+import { dailyGoalGroups, addDaysISO, todayISO } from "@/lib/utils/xp";
 
 export function UpcomingGoalsCard({ goals }: { goals: DailyGoal[] }) {
   const groups = dailyGoalGroups(goals);
@@ -18,11 +18,7 @@ export function UpcomingGoalsCard({ goals }: { goals: DailyGoal[] }) {
             <div key={date}>
               <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
                 <CalendarDays size={16} className="text-[#34D399]" />
-                {new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
-                  weekday: "long",
-                  month: "short",
-                  day: "numeric",
-                })}
+                {dateLabel(date)}
               </div>
               <div className="space-y-2">
                 {groups[date].map((goal) => (
@@ -43,4 +39,15 @@ export function UpcomingGoalsCard({ goals }: { goals: DailyGoal[] }) {
       )}
     </Card>
   );
+}
+
+function dateLabel(date: string) {
+  const today = todayISO();
+  if (date === addDaysISO(today, 1)) return "Tomorrow";
+
+  return new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
 }

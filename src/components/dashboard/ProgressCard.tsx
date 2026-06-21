@@ -17,7 +17,7 @@ export function ProgressCard({ completed, total, percentage }: Props) {
         </div>
         <div>
           <p className="text-2xl font-semibold text-white">
-            {completed} / {total} Goals Complete
+            {completed} / {total} Goals
           </p>
           <p className="mt-1 text-sm text-[#A1A1AA]">{percentage}%</p>
         </div>

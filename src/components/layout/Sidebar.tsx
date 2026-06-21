@@ -3,6 +3,7 @@
 import {
   BarChart3,
   CheckCircle2,
+  BookOpenText,
   LayoutDashboard,
   LogOut,
   Trophy,
@@ -18,6 +19,7 @@ import { getCurrentUser } from "@/lib/auth/client";
 const items = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/today", label: "Today", icon: CheckCircle2 },
+  { href: "/journal", label: "Journal", icon: BookOpenText },
   { href: "/achievements", label: "Achievements", icon: Trophy },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
 ];
@@ -119,7 +121,7 @@ export function Sidebar() {
         </div>
       </aside>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-[#1A1A1A] bg-[#050505]/95 px-2 py-2 backdrop-blur-xl lg:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-6 border-t border-[#1A1A1A] bg-[#050505]/95 px-2 py-2 backdrop-blur-xl lg:hidden">
         {items.map((item) => {
           const Icon = item.icon;
           const active =
