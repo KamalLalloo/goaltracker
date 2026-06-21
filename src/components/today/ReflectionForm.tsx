@@ -20,6 +20,8 @@ export function ReflectionForm({ date, entry, onChange }: Props) {
     what_could_improve: entry?.what_could_improve ?? "",
     what_did_i_learn: entry?.what_did_i_learn ?? "",
     idea_of_day: entry?.idea_of_day ?? "",
+    biggest_win: entry?.biggest_win ?? "",
+    tomorrow_focus: entry?.tomorrow_focus ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -76,6 +78,20 @@ export function ReflectionForm({ date, entry, onChange }: Props) {
             setForm({ ...form, idea_of_day: event.target.value })
           }
           value={form.idea_of_day}
+        />
+        <Textarea
+          label="Biggest Win Today"
+          onChange={(event) =>
+            setForm({ ...form, biggest_win: event.target.value })
+          }
+          value={form.biggest_win}
+        />
+        <Textarea
+          label="Tomorrow's Main Focus"
+          onChange={(event) =>
+            setForm({ ...form, tomorrow_focus: event.target.value })
+          }
+          value={form.tomorrow_focus}
         />
       </div>
       {message && <p className="mt-4 text-sm text-[#A1A1AA]">{message}</p>}

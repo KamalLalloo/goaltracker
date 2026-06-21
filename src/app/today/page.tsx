@@ -22,7 +22,7 @@ export default function TodayPage() {
       try {
         setLoading(true);
         const [goalsData, entryData] = await Promise.all([
-          fetchGoals(today),
+          fetchGoals(),
           fetchEntry(today),
         ]);
         setGoals(goalsData);

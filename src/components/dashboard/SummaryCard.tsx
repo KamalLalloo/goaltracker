@@ -17,7 +17,7 @@ const metrics = [
     icon: Activity,
     suffix: "",
   },
-  { key: "mood", label: "Mood", icon: Smile, suffix: "/10" },
+  { key: "mood", label: "Day Rating", icon: Smile, suffix: "/10" },
 ] as const;
 
 export function SummaryCard({ entry }: { entry: DailyEntry | null }) {

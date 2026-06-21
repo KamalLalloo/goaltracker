@@ -17,6 +17,7 @@ type Props = {
 
 export function GoalsForm({ date, goals, onChange }: Props) {
   const [title, setTitle] = useState("");
+  const [targetDate, setTargetDate] = useState(date);
   const [xp, setXp] = useState(5);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -29,12 +30,13 @@ export function GoalsForm({ date, goals, onChange }: Props) {
       setSaving(true);
       setError("");
       const goal = await createGoal({
-        goal_date: date,
+        goal_date: targetDate,
         title: title.trim(),
         xp_value: xp,
       });
-      onChange([...goals, goal]);
+      onChange([...goals, goal].sort((a, b) => a.goal_date.localeCompare(b.goal_date)));
       setTitle("");
+      setTargetDate(date);
       setXp(5);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add goal.");
@@ -68,13 +70,20 @@ export function GoalsForm({ date, goals, onChange }: Props) {
   }
 
   return (
-    <Card title="Daily Goals" eyebrow="Today">
-      <form className="grid gap-4 md:grid-cols-[1fr_180px_auto]" onSubmit={addGoal}>
+    <Card title="Daily Goals" eyebrow="Schedule">
+      <form className="grid gap-4 md:grid-cols-[1fr_180px_180px_auto]" onSubmit={addGoal}>
         <Input
           label="Goal Title"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder="Ship the most important task"
+        />
+        <Input
+          label="Target Date"
+          min={date}
+          onChange={(event) => setTargetDate(event.target.value)}
+          type="date"
+          value={targetDate}
         />
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-[#A1A1AA]">
@@ -127,7 +136,9 @@ export function GoalsForm({ date, goals, onChange }: Props) {
                 >
                   {goal.title}
                 </p>
-                <p className="text-xs text-[#A1A1AA]">{goal.xp_value} XP</p>
+                <p className="text-xs text-[#A1A1AA]">
+                  {goal.goal_date} · {goal.xp_value} XP
+                </p>
               </div>
               <Button
                 aria-label="Delete goal"

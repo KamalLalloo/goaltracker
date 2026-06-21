@@ -7,6 +7,8 @@ export type DailyEntry = {
   what_could_improve: string | null;
   what_did_i_learn: string | null;
   idea_of_day: string | null;
+  biggest_win: string | null;
+  tomorrow_focus: string | null;
   mood: number | null;
   sleep_score: number | null;
   wake_time: string | null;
@@ -43,6 +45,8 @@ export type EntryUpdate = Partial<
     | "what_could_improve"
     | "what_did_i_learn"
     | "idea_of_day"
+    | "biggest_win"
+    | "tomorrow_focus"
     | "mood"
     | "sleep_score"
     | "wake_time"

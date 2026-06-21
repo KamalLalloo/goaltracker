@@ -33,3 +33,67 @@ export function completionPercentage(completed: number, total: number) {
 export function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
+
+export function addDaysISO(date: string, days: number) {
+  const next = new Date(`${date}T00:00:00`);
+  next.setDate(next.getDate() + days);
+  return next.toISOString().slice(0, 10);
+}
+
+export function goalStats(goals: DailyGoal[]) {
+  const completed = goals.filter((goal) => goal.completed).length;
+
+  return {
+    completed,
+    total: goals.length,
+    missed: goals.length - completed,
+    percentage: completionPercentage(completed, goals.length),
+  };
+}
+
+export function dailyGoalGroups(goals: DailyGoal[]) {
+  return goals.reduce<Record<string, DailyGoal[]>>((groups, goal) => {
+    groups[goal.goal_date] = groups[goal.goal_date] ?? [];
+    groups[goal.goal_date].push(goal);
+    return groups;
+  }, {});
+}
+
+export function isSuccessfulDay(goals: DailyGoal[]) {
+  if (!goals.length) return false;
+  return goalStats(goals).percentage >= 70;
+}
+
+export function currentStreak(goals: DailyGoal[], fromDate = todayISO()) {
+  const groups = dailyGoalGroups(goals.filter((goal) => goal.goal_date <= fromDate));
+  let streak = 0;
+  let cursor = fromDate;
+
+  while (groups[cursor]?.length && isSuccessfulDay(groups[cursor])) {
+    streak += 1;
+    cursor = addDaysISO(cursor, -1);
+  }
+
+  return streak;
+}
+
+export function bestStreak(goals: DailyGoal[]) {
+  const groups = dailyGoalGroups(goals);
+  const dates = Object.keys(groups).sort();
+  let best = 0;
+  let current = 0;
+  let previous = "";
+
+  for (const date of dates) {
+    const consecutive = previous ? addDaysISO(previous, 1) === date : true;
+    if (consecutive && isSuccessfulDay(groups[date])) {
+      current += 1;
+    } else {
+      current = isSuccessfulDay(groups[date]) ? 1 : 0;
+    }
+    best = Math.max(best, current);
+    previous = date;
+  }
+
+  return best;
+}

@@ -100,7 +100,7 @@ export function HealthForm({ date, entry, onChange }: Props) {
         </label>
         <label className="md:col-span-2">
           <span className="mb-2 block text-sm font-medium text-[#A1A1AA]">
-            Mood: {form.mood}
+            Day Rating: {form.mood}
           </span>
           <input
             className="h-11 w-full"
