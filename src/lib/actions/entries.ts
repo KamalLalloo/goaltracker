@@ -1,12 +1,15 @@
 "use client";
 
 import { supabase } from "@/lib/supabase/client";
+import { getCurrentUser } from "@/lib/auth/client";
 import type { DailyEntry, EntryUpdate } from "@/lib/types";
 
 export async function fetchEntry(entryDate: string) {
+  const user = await getCurrentUser();
   const { data, error } = await supabase
     .from("daily_entries")
     .select("*")
+    .eq("user_id", user.id)
     .eq("entry_date", entryDate)
     .maybeSingle();
 
@@ -15,9 +18,11 @@ export async function fetchEntry(entryDate: string) {
 }
 
 export async function fetchEntries(startDate?: string) {
+  const user = await getCurrentUser();
   let query = supabase
     .from("daily_entries")
     .select("*")
+    .eq("user_id", user.id)
     .order("entry_date", { ascending: true });
 
   if (startDate) {
@@ -30,6 +35,7 @@ export async function fetchEntries(startDate?: string) {
 }
 
 export async function upsertEntry(entryDate: string, input: EntryUpdate) {
+  const user = await getCurrentUser();
   const existing = await fetchEntry(entryDate);
 
   if (existing) {
@@ -37,6 +43,7 @@ export async function upsertEntry(entryDate: string, input: EntryUpdate) {
       .from("daily_entries")
       .update(input)
       .eq("id", existing.id)
+      .eq("user_id", user.id)
       .select("*")
       .single();
 
@@ -46,7 +53,7 @@ export async function upsertEntry(entryDate: string, input: EntryUpdate) {
 
   const { data, error } = await supabase
     .from("daily_entries")
-    .insert({ entry_date: entryDate, ...input })
+    .insert({ user_id: user.id, entry_date: entryDate, ...input })
     .select("*")
     .single();
 

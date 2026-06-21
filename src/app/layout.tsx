@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { AppShell } from "@/components/layout/AppShell";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,8 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full bg-[#050505] text-white">
-        <Sidebar />
-        <main className="min-h-screen pb-24 lg:ml-72 lg:pb-0">{children}</main>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
