@@ -1,4 +1,4 @@
-import { Activity, AlarmClock, Dumbbell, Moon, Smile } from "lucide-react";
+import { Activity, AlarmClock, Dumbbell, Moon, Scale, Smile } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import type { DailyEntry } from "@/lib/types";
 
@@ -18,12 +18,13 @@ const metrics = [
     suffix: "",
   },
   { key: "mood", label: "Day Rating", icon: Smile, suffix: "/10" },
+  { key: "weight", label: "Weight", icon: Scale, suffix: " kg" },
 ] as const;
 
 export function SummaryCard({ entry }: { entry: DailyEntry | null }) {
   return (
     <Card title="Daily Summary">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         {metrics.map((metric) => {
           const Icon = metric.icon;
           const raw = entry?.[metric.key];

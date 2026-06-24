@@ -14,6 +14,7 @@ export type DailyEntry = {
   wake_time: string | null;
   exercise_minutes: number | null;
   exercise_intensity: "Low" | "Medium" | "High" | "Peak" | string | null;
+  weight: number | null;
   created_at: string | null;
 };
 
@@ -37,6 +38,14 @@ export type Achievement = {
   created_at: string | null;
 };
 
+export type FoodEntry = {
+  id: string;
+  user_id: string | null;
+  entry_date: string;
+  food_name: string;
+  created_at: string | null;
+};
+
 export type EntryUpdate = Partial<
   Pick<
     DailyEntry,
@@ -52,5 +61,6 @@ export type EntryUpdate = Partial<
     | "wake_time"
     | "exercise_minutes"
     | "exercise_intensity"
+    | "weight"
   >
 >;

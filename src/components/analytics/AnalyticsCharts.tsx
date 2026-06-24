@@ -40,7 +40,19 @@ export function AnalyticsCharts({ data }: { data: TrendPoint[] }) {
         </ResponsiveContainer>
       </ChartFrame>
 
-      <ChartFrame title="XP Growth">
+      <ChartFrame title="XP Earned Per Day">
+        <ResponsiveContainer height={260} width="100%">
+          <BarChart data={data}>
+            <CartesianGrid stroke="#1A1A1A" vertical={false} />
+            <XAxis dataKey="date" tick={axisStyle} tickLine={false} />
+            <YAxis tick={axisStyle} tickLine={false} />
+            <Tooltip contentStyle={tooltipStyle} />
+            <Bar dataKey="xp" fill="#34D399" radius={[8, 8, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartFrame>
+
+      <ChartFrame title="XP Trend">
         <ResponsiveContainer height={260} width="100%">
           <LineChart data={data}>
             <CartesianGrid stroke="#1A1A1A" vertical={false} />

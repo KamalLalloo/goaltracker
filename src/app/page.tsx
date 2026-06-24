@@ -9,14 +9,19 @@ import { QuickStats } from "@/components/dashboard/QuickStats";
 import { QuoteCard } from "@/components/dashboard/QuoteCard";
 import { SummaryCard } from "@/components/dashboard/SummaryCard";
 import { UpcomingGoalsCard } from "@/components/dashboard/UpcomingGoalsCard";
+import { XPBreakdownCard } from "@/components/dashboard/XPBreakdownCard";
 import { XPCard } from "@/components/dashboard/XPCard";
 import { fetchAchievements } from "@/lib/actions/achievements";
-import { fetchEntry } from "@/lib/actions/entries";
+import { fetchEntries, fetchEntry } from "@/lib/actions/entries";
 import { fetchGoals } from "@/lib/actions/goals";
 import type { Achievement, DailyEntry, DailyGoal } from "@/lib/types";
 import {
   addDaysISO,
   currentStreak,
+  achievementXP,
+  completedGoalXP,
+  exerciseXP,
+  exerciseXPForEntry,
   goalStats,
   levelFromXP,
   todayISO,
@@ -26,6 +31,7 @@ import {
 export default function DashboardPage() {
   const [goals, setGoals] = useState<DailyGoal[]>([]);
   const [entry, setEntry] = useState<DailyEntry | null>(null);
+  const [entries, setEntries] = useState<DailyEntry[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -35,13 +41,15 @@ export default function DashboardPage() {
       try {
         setLoading(true);
         const today = todayISO();
-        const [goalsData, entryData, achievementData] = await Promise.all([
+        const [goalsData, entryData, entriesData, achievementData] = await Promise.all([
           fetchGoals(),
           fetchEntry(today),
+          fetchEntries(),
           fetchAchievements(),
         ]);
         setGoals(goalsData);
         setEntry(entryData);
+        setEntries(entriesData);
         setAchievements(achievementData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load dashboard.");
@@ -53,7 +61,13 @@ export default function DashboardPage() {
     load();
   }, []);
 
-  const xp = useMemo(() => totalXP(goals, achievements), [goals, achievements]);
+  const goalXp = useMemo(() => completedGoalXP(goals), [goals]);
+  const exerciseXp = useMemo(() => exerciseXP(entries), [entries]);
+  const achievementXp = useMemo(() => achievementXP(achievements), [achievements]);
+  const xp = useMemo(
+    () => totalXP(goals, achievements, entries),
+    [achievements, entries, goals],
+  );
   const today = todayISO();
   const todayGoals = useMemo(
     () => goals.filter((goal) => goal.goal_date === today),
@@ -112,9 +126,15 @@ export default function DashboardPage() {
             percentage={todayStats.percentage}
             total={todayStats.total}
           />
+          <CardExerciseXP value={exerciseXPForEntry(entry)} />
           <XPCard totalXp={xp} />
         </div>
       </div>
+      <XPBreakdownCard
+        achievementXp={achievementXp}
+        exerciseXp={exerciseXp}
+        goalXp={goalXp}
+      />
       <div className="grid gap-6 xl:grid-cols-2">
         <UpcomingGoalsCard goals={upcomingGoals} />
         <OverdueGoalsCard goals={overdueGoals} />
@@ -123,6 +143,15 @@ export default function DashboardPage() {
         <QuoteCard quote={entry?.quote} />
         <SummaryCard entry={entry} />
       </div>
+    </div>
+  );
+}
+
+function CardExerciseXP({ value }: { value: number }) {
+  return (
+    <div className="rounded-[22px] border border-[#1A1A1A] bg-[#0D0D0D] p-5">
+      <p className="text-sm text-[#A1A1AA]">Exercise XP Today</p>
+      <p className="mt-2 text-3xl font-semibold text-[#34D399]">{value}</p>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { upsertEntry } from "@/lib/actions/entries";
 import type { DailyEntry } from "@/lib/types";
+import { exerciseXPForEntry } from "@/lib/utils/xp";
 
 type Props = {
   date: string;
@@ -22,6 +23,7 @@ export function HealthForm({ date, entry, onChange }: Props) {
     wake_time: entry?.wake_time?.slice(0, 5) ?? "07:00",
     exercise_minutes: entry?.exercise_minutes ?? 0,
     exercise_intensity: entry?.exercise_intensity ?? "Medium",
+    weight: entry?.weight ?? 0,
     mood: entry?.mood ?? 7,
   });
   const [saving, setSaving] = useState(false);
@@ -113,6 +115,22 @@ export function HealthForm({ date, entry, onChange }: Props) {
             value={form.mood}
           />
         </label>
+        <Input
+          label="Weight (kg)"
+          min={0}
+          onChange={(event) =>
+            setForm({ ...form, weight: Number(event.target.value) })
+          }
+          step="0.1"
+          type="number"
+          value={form.weight}
+        />
+        <div className="rounded-[18px] border border-[#1A1A1A] bg-black/25 p-4">
+          <p className="text-sm text-[#A1A1AA]">Exercise XP</p>
+          <p className="mt-2 text-2xl font-semibold text-[#34D399]">
+            {exerciseXPForEntry(form)} XP
+          </p>
+        </div>
       </div>
       {message && <p className="mt-4 text-sm text-[#A1A1AA]">{message}</p>}
     </Card>

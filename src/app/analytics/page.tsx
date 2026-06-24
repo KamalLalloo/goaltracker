@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AnalyticsCharts } from "@/components/analytics/AnalyticsCharts";
+import { ExportDataButton } from "@/components/analytics/ExportDataButton";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { fetchAchievements } from "@/lib/actions/achievements";
@@ -14,11 +15,13 @@ import {
   completedGoalXP,
   completionPercentage,
   currentStreak,
+  exerciseXP,
+  exerciseXPForEntry,
   goalStats,
   todayISO,
 } from "@/lib/utils/xp";
 
-type Filter = "week" | "month" | "year";
+type Filter = "week" | "month" | "year" | "all";
 
 export default function AnalyticsPage() {
   const [filter, setFilter] = useState<Filter>("week");
@@ -38,19 +41,19 @@ export default function AnalyticsPage() {
         setError("");
         const [goalsData, entriesData, achievementsData] = await Promise.all([
           fetchGoals(),
-          fetchEntries(startDate),
+          fetchEntries(startDate ?? undefined),
           fetchAchievements(),
         ]);
         setGoals(
           goalsData.filter(
-            (goal) => goal.goal_date >= startDate && goal.goal_date <= today,
+            (goal) => (!startDate || goal.goal_date >= startDate) && goal.goal_date <= today,
           ),
         );
         setEntries(entriesData.filter((entry) => entry.entry_date <= today));
         setAchievements(
           achievementsData.filter(
             (achievement) =>
-              achievement.achieved_date >= startDate &&
+              (!startDate || achievement.achieved_date >= startDate) &&
               achievement.achieved_date <= today,
           ),
         );
@@ -79,7 +82,7 @@ export default function AnalyticsPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-      <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <header className="flex flex-col justify-between gap-4 xl:flex-row xl:items-end">
         <div>
           <p className="text-sm font-medium uppercase tracking-[0.18em] text-[#34D399]">
             Insights
@@ -88,8 +91,9 @@ export default function AnalyticsPage() {
             Analytics
           </h1>
         </div>
-        <div className="grid grid-cols-3 rounded-2xl border border-[#1A1A1A] bg-[#0D0D0D] p-1">
-          {(["week", "month", "year"] as Filter[]).map((item) => (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="grid grid-cols-4 rounded-2xl border border-[#1A1A1A] bg-[#0D0D0D] p-1">
+          {(["week", "month", "year", "all"] as Filter[]).map((item) => (
             <button
               className={`rounded-xl px-4 py-2 text-sm font-semibold capitalize transition ${
                 filter === item
@@ -100,9 +104,11 @@ export default function AnalyticsPage() {
               onClick={() => setFilter(item)}
               type="button"
             >
-              {item}
+              {item === "all" ? "All Time" : item}
             </button>
           ))}
+        </div>
+        <ExportDataButton />
         </div>
       </header>
 
@@ -118,6 +124,11 @@ export default function AnalyticsPage() {
         <Metric label="Avg Exercise" value={`${stats.averageExercise} min`} />
         <Metric label="Avg Day Rating" value={stats.averageMood} />
         <Metric label="Achievements" value={stats.achievementCount} />
+        <Metric label="Average Daily XP" value={stats.averageDailyXp} />
+        <Metric label="Best XP Day" value={stats.bestXpDay} />
+        <Metric label="Total Exercise XP" value={stats.totalExerciseXp} />
+        <Metric label="Total Goal XP" value={stats.totalGoalXp} />
+        <Metric label="Total Achievement XP" value={stats.totalAchievementXp} />
       </div>
 
       {chartData.length === 0 ? (
@@ -154,8 +165,13 @@ function buildStats(
     .map((entry) => entry.mood)
     .filter((mood): mood is number => typeof mood === "number");
 
+  const trend = buildTrend(goals, entries, achievements);
+  const goalXp = completedGoalXP(goals);
+  const entryExerciseXp = exerciseXP(entries);
+  const awardedXp = achievementXP(achievements);
+
   return {
-    totalXp: completedGoalXP(goals) + achievementXP(achievements),
+    totalXp: goalXp + entryExerciseXp + awardedXp,
     totalGoals: stats.total,
     completedGoals: stats.completed,
     missedGoals: stats.missed,
@@ -166,6 +182,11 @@ function buildStats(
     averageExercise: average(exerciseMinutes),
     averageMood: average(moods),
     achievementCount: achievements.length,
+    averageDailyXp: average(trend.map((day) => day.xp)),
+    bestXpDay: Math.max(0, ...trend.map((day) => day.xp)),
+    totalExerciseXp: entryExerciseXp,
+    totalGoalXp: goalXp,
+    totalAchievementXp: awardedXp,
   };
 }
 
@@ -189,7 +210,10 @@ function buildTrend(
     const dayAchievements = achievements.filter(
       (achievement) => achievement.achieved_date === date,
     );
-    const dayXp = completedGoalXP(dayGoals) + achievementXP(dayAchievements);
+    const dayXp =
+      completedGoalXP(dayGoals) +
+      exerciseXPForEntry(entry) +
+      achievementXP(dayAchievements);
     cumulativeXp += dayXp;
     const completed = dayGoals.filter((goal) => goal.completed).length;
 
@@ -212,6 +236,7 @@ function average(values: number[]) {
 }
 
 function rangeStart(filter: Filter) {
+  if (filter === "all") return null;
   const date = new Date();
   if (filter === "week") date.setDate(date.getDate() - 6);
   if (filter === "month") date.setMonth(date.getMonth() - 1);

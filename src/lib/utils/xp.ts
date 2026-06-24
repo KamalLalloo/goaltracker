@@ -1,4 +1,4 @@
-import type { Achievement, DailyGoal } from "@/lib/types";
+import type { Achievement, DailyEntry, DailyGoal } from "@/lib/types";
 
 export function completedGoalXP(goals: DailyGoal[]) {
   return goals
@@ -13,8 +13,33 @@ export function achievementXP(achievements: Achievement[]) {
   );
 }
 
-export function totalXP(goals: DailyGoal[], achievements: Achievement[]) {
-  return completedGoalXP(goals) + achievementXP(achievements);
+export function exerciseXPForEntry(entry: Pick<DailyEntry, "exercise_minutes" | "exercise_intensity"> | null | undefined) {
+  const minutes = entry?.exercise_minutes ?? 0;
+  const intensity = String(entry?.exercise_intensity ?? "").toLowerCase();
+  const multiplier =
+    intensity === "low"
+      ? 0.2
+      : intensity === "medium"
+        ? 0.4
+        : intensity === "high"
+          ? 0.6
+          : intensity === "peak"
+            ? 0.8
+            : 0;
+
+  return Math.round(minutes * multiplier);
+}
+
+export function exerciseXP(entries: DailyEntry[]) {
+  return entries.reduce((total, entry) => total + exerciseXPForEntry(entry), 0);
+}
+
+export function totalXP(
+  goals: DailyGoal[],
+  achievements: Achievement[],
+  entries: DailyEntry[] = [],
+) {
+  return completedGoalXP(goals) + exerciseXP(entries) + achievementXP(achievements);
 }
 
 export function levelFromXP(xp: number) {

@@ -80,7 +80,6 @@ export function GoalsForm({ date, goals, onChange }: Props) {
         />
         <Input
           label="Target Date"
-          min={date}
           onChange={(event) => setTargetDate(event.target.value)}
           type="date"
           value={targetDate}

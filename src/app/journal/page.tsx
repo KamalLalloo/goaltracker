@@ -7,12 +7,14 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Input";
 import { fetchAchievements } from "@/lib/actions/achievements";
 import { fetchEntries } from "@/lib/actions/entries";
+import { fetchFoodEntries } from "@/lib/actions/food";
 import { fetchGoals } from "@/lib/actions/goals";
-import type { Achievement, DailyEntry, DailyGoal } from "@/lib/types";
+import type { Achievement, DailyEntry, DailyGoal, FoodEntry } from "@/lib/types";
 import {
   achievementXP,
   completedGoalXP,
   completionPercentage,
+  exerciseXPForEntry,
   todayISO,
 } from "@/lib/utils/xp";
 
@@ -22,6 +24,7 @@ export default function JournalPage() {
   const [entries, setEntries] = useState<DailyEntry[]>([]);
   const [goals, setGoals] = useState<DailyGoal[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [foods, setFoods] = useState<FoodEntry[]>([]);
   const [filter, setFilter] = useState<Filter>("month");
   const [dateSearch, setDateSearch] = useState("");
   const [openIds, setOpenIds] = useState<string[]>([]);
@@ -32,16 +35,18 @@ export default function JournalPage() {
     async function load() {
       try {
         setLoading(true);
-        const [entryData, goalData, achievementData] = await Promise.all([
+        const [entryData, goalData, achievementData, foodData] = await Promise.all([
           fetchEntries(),
           fetchGoals(),
           fetchAchievements(),
+          fetchFoodEntries(),
         ]);
         setEntries(
           entryData.sort((a, b) => b.entry_date.localeCompare(a.entry_date)),
         );
         setGoals(goalData);
         setAchievements(achievementData);
+        setFoods(foodData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load journal.");
       } finally {
@@ -122,14 +127,20 @@ export default function JournalPage() {
             const dayAchievements = achievements.filter(
               (achievement) => achievement.achieved_date === entry.entry_date,
             );
+            const dayFoods = foods.filter(
+              (food) => food.entry_date === entry.entry_date,
+            );
             const completed = dayGoals.filter((goal) => goal.completed);
             const missed = dayGoals.filter((goal) => !goal.completed);
             const successRate = completionPercentage(
               completed.length,
               dayGoals.length,
             );
+            const exerciseXp = exerciseXPForEntry(entry);
             const dayXp =
-              completedGoalXP(dayGoals) + achievementXP(dayAchievements);
+              completedGoalXP(dayGoals) +
+              exerciseXp +
+              achievementXP(dayAchievements);
 
             return (
               <Card className="p-0" key={entry.id}>
@@ -165,6 +176,7 @@ export default function JournalPage() {
                       <JournalMetric label="Goals Completed" value={completed.length} />
                       <JournalMetric label="Goals Missed" value={missed.length} />
                       <JournalMetric label="Success Rate" value={`${successRate}%`} />
+                      <JournalMetric label="Exercise XP" value={exerciseXp} />
                       <JournalMetric label="XP Earned" value={dayXp} />
                     </div>
 
@@ -210,6 +222,26 @@ export default function JournalPage() {
                         label="Exercise Intensity"
                         value={entry.exercise_intensity ?? "--"}
                       />
+                      <JournalMetric
+                        label="Weight"
+                        value={entry.weight ? `${entry.weight} kg` : "--"}
+                      />
+                    </div>
+                    <div className="mt-5 rounded-[18px] border border-[#1A1A1A] bg-black/25 p-4">
+                      <p className="mb-3 text-xs font-medium text-[#A1A1AA]">
+                        Foods Consumed
+                      </p>
+                      {dayFoods.length === 0 ? (
+                        <p className="text-sm text-white">--</p>
+                      ) : (
+                        <ul className="space-y-2">
+                          {dayFoods.map((food) => (
+                            <li className="text-sm text-white" key={food.id}>
+                              {food.food_name}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   </div>
                 )}
