@@ -7,18 +7,20 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Input";
 import { createGoal, deleteGoal, updateGoal } from "@/lib/actions/goals";
-import type { DailyGoal } from "@/lib/types";
+import type { DailyGoal, Project } from "@/lib/types";
 
 type Props = {
   date: string;
   goals: DailyGoal[];
+  projects?: Project[];
   onChange: (goals: DailyGoal[]) => void;
 };
 
-export function GoalsForm({ date, goals, onChange }: Props) {
+export function GoalsForm({ date, goals, projects = [], onChange }: Props) {
   const [title, setTitle] = useState("");
   const [targetDate, setTargetDate] = useState(date);
   const [xp, setXp] = useState(5);
+  const [projectId, setProjectId] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -33,11 +35,13 @@ export function GoalsForm({ date, goals, onChange }: Props) {
         goal_date: targetDate,
         title: title.trim(),
         xp_value: xp,
+        project_id: projectId || null,
       });
       onChange([...goals, goal].sort((a, b) => a.goal_date.localeCompare(b.goal_date)));
       setTitle("");
       setTargetDate(date);
       setXp(5);
+      setProjectId("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add goal.");
     } finally {
@@ -71,7 +75,7 @@ export function GoalsForm({ date, goals, onChange }: Props) {
 
   return (
     <Card title="Daily Goals" eyebrow="Schedule">
-      <form className="grid gap-4 md:grid-cols-[1fr_180px_180px_auto]" onSubmit={addGoal}>
+      <form className="grid gap-4 md:grid-cols-[1fr_180px_180px_220px_auto]" onSubmit={addGoal}>
         <Input
           label="Goal Title"
           value={title}
@@ -96,6 +100,23 @@ export function GoalsForm({ date, goals, onChange }: Props) {
             type="range"
             value={xp}
           />
+        </label>
+        <label className="block">
+          <span className="mb-2 block text-sm font-medium text-[#A1A1AA]">
+            Project
+          </span>
+          <select
+            className="h-11 w-full rounded-2xl border border-[#1A1A1A] bg-black/40 px-4 text-sm text-white outline-none focus:border-[#34D399]/70"
+            onChange={(event) => setProjectId(event.target.value)}
+            value={projectId}
+          >
+            <option value="">No project</option>
+            {projects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.title}
+              </option>
+            ))}
+          </select>
         </label>
         <Button className="self-end" disabled={saving} type="submit">
           <Plus size={17} />
@@ -137,6 +158,12 @@ export function GoalsForm({ date, goals, onChange }: Props) {
                 </p>
                 <p className="text-xs text-[#A1A1AA]">
                   {goal.goal_date} · {goal.xp_value} XP
+                  {goal.project_id
+                    ? ` · ${
+                        projects.find((project) => project.id === goal.project_id)
+                          ?.title ?? "Project"
+                      }`
+                    : ""}
                 </p>
               </div>
               <Button

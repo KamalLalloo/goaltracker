@@ -5,12 +5,11 @@ import { AnalyticsCharts } from "@/components/analytics/AnalyticsCharts";
 import { ExportDataButton } from "@/components/analytics/ExportDataButton";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { fetchAchievements } from "@/lib/actions/achievements";
 import { fetchEntries } from "@/lib/actions/entries";
 import { fetchGoals } from "@/lib/actions/goals";
-import type { Achievement, DailyEntry, DailyGoal } from "@/lib/types";
+import { fetchProjects } from "@/lib/actions/projects";
+import type { DailyEntry, DailyGoal, Project } from "@/lib/types";
 import {
-  achievementXP,
   bestStreak,
   completedGoalXP,
   completionPercentage,
@@ -18,6 +17,8 @@ import {
   exerciseXP,
   exerciseXPForEntry,
   goalStats,
+  projectProgress,
+  projectXP,
   todayISO,
 } from "@/lib/utils/xp";
 
@@ -27,7 +28,7 @@ export default function AnalyticsPage() {
   const [filter, setFilter] = useState<Filter>("week");
   const [goals, setGoals] = useState<DailyGoal[]>([]);
   const [entries, setEntries] = useState<DailyEntry[]>([]);
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -39,10 +40,10 @@ export default function AnalyticsPage() {
       try {
         setLoading(true);
         setError("");
-        const [goalsData, entriesData, achievementsData] = await Promise.all([
+        const [goalsData, entriesData, projectData] = await Promise.all([
           fetchGoals(),
           fetchEntries(startDate ?? undefined),
-          fetchAchievements(),
+          fetchProjects(),
         ]);
         setGoals(
           goalsData.filter(
@@ -50,13 +51,7 @@ export default function AnalyticsPage() {
           ),
         );
         setEntries(entriesData.filter((entry) => entry.entry_date <= today));
-        setAchievements(
-          achievementsData.filter(
-            (achievement) =>
-              (!startDate || achievement.achieved_date >= startDate) &&
-              achievement.achieved_date <= today,
-          ),
-        );
+        setProjects(projectData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load analytics.");
       } finally {
@@ -67,14 +62,14 @@ export default function AnalyticsPage() {
     load();
   }, [startDate, today]);
 
-  const stats = useMemo(() => buildStats(goals, entries, achievements), [
-    achievements,
+  const stats = useMemo(() => buildStats(goals, entries, projects), [
     entries,
     goals,
+    projects,
   ]);
   const chartData = useMemo(
-    () => buildTrend(goals, entries, achievements),
-    [achievements, entries, goals],
+    () => buildTrend(goals, entries, projects),
+    [entries, goals, projects],
   );
 
   if (loading) return <PageShell>Loading analytics...</PageShell>;
@@ -123,12 +118,12 @@ export default function AnalyticsPage() {
         <Metric label="Avg Sleep" value={stats.averageSleep} />
         <Metric label="Avg Exercise" value={`${stats.averageExercise} min`} />
         <Metric label="Avg Day Rating" value={stats.averageMood} />
-        <Metric label="Achievements" value={stats.achievementCount} />
+        <Metric label="Projects" value={projects.length} />
         <Metric label="Average Daily XP" value={stats.averageDailyXp} />
         <Metric label="Best XP Day" value={stats.bestXpDay} />
         <Metric label="Total Exercise XP" value={stats.totalExerciseXp} />
         <Metric label="Total Goal XP" value={stats.totalGoalXp} />
-        <Metric label="Total Achievement XP" value={stats.totalAchievementXp} />
+        <Metric label="Total Project XP" value={stats.totalProjectXp} />
       </div>
 
       {chartData.length === 0 ? (
@@ -152,7 +147,7 @@ function Metric({ label, value }: { label: string; value: string | number }) {
 function buildStats(
   goals: DailyGoal[],
   entries: DailyEntry[],
-  achievements: Achievement[],
+  projects: Project[],
 ) {
   const stats = goalStats(goals);
   const sleepScores = entries
@@ -165,10 +160,10 @@ function buildStats(
     .map((entry) => entry.mood)
     .filter((mood): mood is number => typeof mood === "number");
 
-  const trend = buildTrend(goals, entries, achievements);
+  const trend = buildTrend(goals, entries, projects);
   const goalXp = completedGoalXP(goals);
   const entryExerciseXp = exerciseXP(entries);
-  const awardedXp = achievementXP(achievements);
+  const awardedXp = projectXP(projects);
 
   return {
     totalXp: goalXp + entryExerciseXp + awardedXp,
@@ -181,25 +176,27 @@ function buildStats(
     averageSleep: average(sleepScores),
     averageExercise: average(exerciseMinutes),
     averageMood: average(moods),
-    achievementCount: achievements.length,
+    projectCount: projects.length,
     averageDailyXp: average(trend.map((day) => day.xp)),
     bestXpDay: Math.max(0, ...trend.map((day) => day.xp)),
     totalExerciseXp: entryExerciseXp,
     totalGoalXp: goalXp,
-    totalAchievementXp: awardedXp,
+    totalProjectXp: awardedXp,
   };
 }
 
 function buildTrend(
   goals: DailyGoal[],
   entries: DailyEntry[],
-  achievements: Achievement[],
+  projects: Project[],
 ) {
   const dates = Array.from(
     new Set([
       ...goals.map((goal) => goal.goal_date),
       ...entries.map((entry) => entry.entry_date),
-      ...achievements.map((achievement) => achievement.achieved_date),
+      ...projects
+        .map((project) => project.target_date)
+        .filter((date): date is string => Boolean(date)),
     ]),
   ).sort();
   let cumulativeXp = 0;
@@ -207,27 +204,45 @@ function buildTrend(
   return dates.map((date) => {
     const dayGoals = goals.filter((goal) => goal.goal_date === date);
     const entry = entries.find((item) => item.entry_date === date);
-    const dayAchievements = achievements.filter(
-      (achievement) => achievement.achieved_date === date,
-    );
+    const dayProjectXp = projects
+      .filter((project) => project.status === "Completed" && project.target_date === date)
+      .reduce((sum, project) => sum + (project.xp_reward || 0), 0);
+    const exerciseXp = exerciseXPForEntry(entry);
     const dayXp =
       completedGoalXP(dayGoals) +
-      exerciseXPForEntry(entry) +
-      achievementXP(dayAchievements);
+      exerciseXp +
+      dayProjectXp;
     cumulativeXp += dayXp;
     const completed = dayGoals.filter((goal) => goal.completed).length;
+    const completionRate = completionPercentage(completed, dayGoals.length);
+    const projectPercents = projects.map((project) => projectProgress(project, goals).percentage);
+    const projectProgressAverage = average(projectPercents);
 
     return {
       date: date.slice(5),
       xp: dayXp,
       xpGrowth: cumulativeXp,
+      exerciseXp,
       completed,
       total: dayGoals.length,
-      completionRate: completionPercentage(completed, dayGoals.length),
+      completionRate,
+      consistencyScore: consistencyScore(completionRate, entry),
+      projectCompletion: completionPercentage(
+        projects.filter((project) => project.status === "Completed").length,
+        projects.length,
+      ),
+      projectProgress: Math.round(projectProgressAverage),
       dayRating: entry?.mood ?? null,
       sleep: entry?.sleep_score ?? null,
     };
   });
+}
+
+function consistencyScore(goalCompletion: number, entry: DailyEntry | undefined) {
+  const sleep = Math.min(entry?.sleep_score ?? 0, 100);
+  const exercise = Math.min(((entry?.exercise_minutes ?? 0) / 30) * 100, 100);
+  const rating = Math.min(((entry?.mood ?? 0) / 10) * 100, 100);
+  return Math.round(goalCompletion * 0.4 + sleep * 0.2 + exercise * 0.2 + rating * 0.2);
 }
 
 function average(values: number[]) {

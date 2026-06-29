@@ -5,16 +5,16 @@ import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Input";
-import { fetchAchievements } from "@/lib/actions/achievements";
 import { fetchEntries } from "@/lib/actions/entries";
 import { fetchFoodEntries } from "@/lib/actions/food";
 import { fetchGoals } from "@/lib/actions/goals";
-import type { Achievement, DailyEntry, DailyGoal, FoodEntry } from "@/lib/types";
+import { fetchProjects } from "@/lib/actions/projects";
+import type { DailyEntry, DailyGoal, FoodEntry, Project } from "@/lib/types";
 import {
-  achievementXP,
   completedGoalXP,
   completionPercentage,
   exerciseXPForEntry,
+  projectProgress,
   todayISO,
 } from "@/lib/utils/xp";
 
@@ -23,8 +23,8 @@ type Filter = "week" | "month" | "year";
 export default function JournalPage() {
   const [entries, setEntries] = useState<DailyEntry[]>([]);
   const [goals, setGoals] = useState<DailyGoal[]>([]);
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [foods, setFoods] = useState<FoodEntry[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [filter, setFilter] = useState<Filter>("month");
   const [dateSearch, setDateSearch] = useState("");
   const [openIds, setOpenIds] = useState<string[]>([]);
@@ -35,18 +35,18 @@ export default function JournalPage() {
     async function load() {
       try {
         setLoading(true);
-        const [entryData, goalData, achievementData, foodData] = await Promise.all([
+        const [entryData, goalData, foodData, projectData] = await Promise.all([
           fetchEntries(),
           fetchGoals(),
-          fetchAchievements(),
           fetchFoodEntries(),
+          fetchProjects(),
         ]);
         setEntries(
           entryData.sort((a, b) => b.entry_date.localeCompare(a.entry_date)),
         );
         setGoals(goalData);
-        setAchievements(achievementData);
         setFoods(foodData);
+        setProjects(projectData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load journal.");
       } finally {
@@ -124,11 +124,17 @@ export default function JournalPage() {
             const dayGoals = goals.filter(
               (goal) => goal.goal_date === entry.entry_date,
             );
-            const dayAchievements = achievements.filter(
-              (achievement) => achievement.achieved_date === entry.entry_date,
-            );
             const dayFoods = foods.filter(
               (food) => food.entry_date === entry.entry_date,
+            );
+            const dayProjectIds = Array.from(
+              new Set(dayGoals.map((goal) => goal.project_id).filter(Boolean)),
+            );
+            const linkedProjects = projects.filter((project) =>
+              dayProjectIds.includes(project.id),
+            );
+            const goalsAtDate = goals.filter(
+              (goal) => goal.goal_date <= entry.entry_date,
             );
             const completed = dayGoals.filter((goal) => goal.completed);
             const missed = dayGoals.filter((goal) => !goal.completed);
@@ -140,7 +146,9 @@ export default function JournalPage() {
             const dayXp =
               completedGoalXP(dayGoals) +
               exerciseXp +
-              achievementXP(dayAchievements);
+              linkedProjects
+                .filter((project) => project.status === "Completed")
+                .reduce((sum, project) => sum + (project.xp_reward || 0), 0);
 
             return (
               <Card className="p-0" key={entry.id}>
@@ -241,6 +249,36 @@ export default function JournalPage() {
                             </li>
                           ))}
                         </ul>
+                      )}
+                    </div>
+                    <div className="mt-5 rounded-[18px] border border-[#1A1A1A] bg-black/25 p-4">
+                      <p className="mb-3 text-xs font-medium text-[#A1A1AA]">
+                        Linked Project Progress At This Date
+                      </p>
+                      {linkedProjects.length === 0 ? (
+                        <p className="text-sm text-white">--</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {linkedProjects.map((project) => {
+                            const progress = projectProgress(project, goalsAtDate);
+                            return (
+                              <div key={project.id}>
+                                <div className="mb-1 flex justify-between gap-3 text-sm">
+                                  <span className="text-white">{project.title}</span>
+                                  <span className="text-[#34D399]">
+                                    {progress.percentage}%
+                                  </span>
+                                </div>
+                                <div className="h-2 overflow-hidden rounded-full bg-white/[0.07]">
+                                  <div
+                                    className="h-full rounded-full bg-[#34D399]"
+                                    style={{ width: `${progress.percentage}%` }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       )}
                     </div>
                   </div>

@@ -1,4 +1,4 @@
-import type { Achievement, DailyEntry, DailyGoal } from "@/lib/types";
+import type { DailyEntry, DailyGoal, Project } from "@/lib/types";
 
 export function completedGoalXP(goals: DailyGoal[]) {
   return goals
@@ -6,11 +6,10 @@ export function completedGoalXP(goals: DailyGoal[]) {
     .reduce((total, goal) => total + (goal.xp_value || 0), 0);
 }
 
-export function achievementXP(achievements: Achievement[]) {
-  return achievements.reduce(
-    (total, achievement) => total + (achievement.xp_awarded || 0),
-    0,
-  );
+export function projectXP(projects: Project[]) {
+  return projects
+    .filter((project) => project.status === "Completed")
+    .reduce((total, project) => total + (project.xp_reward || 0), 0);
 }
 
 export function exerciseXPForEntry(entry: Pick<DailyEntry, "exercise_minutes" | "exercise_intensity"> | null | undefined) {
@@ -36,10 +35,10 @@ export function exerciseXP(entries: DailyEntry[]) {
 
 export function totalXP(
   goals: DailyGoal[],
-  achievements: Achievement[],
+  projects: Project[],
   entries: DailyEntry[] = [],
 ) {
-  return completedGoalXP(goals) + exerciseXP(entries) + achievementXP(achievements);
+  return completedGoalXP(goals) + exerciseXP(entries) + projectXP(projects);
 }
 
 export function levelFromXP(xp: number) {
@@ -73,6 +72,18 @@ export function goalStats(goals: DailyGoal[]) {
     total: goals.length,
     missed: goals.length - completed,
     percentage: completionPercentage(completed, goals.length),
+  };
+}
+
+export function projectProgress(project: Project, goals: DailyGoal[]) {
+  const linked = goals.filter((goal) => goal.project_id === project.id);
+  const completed = linked.filter((goal) => goal.completed).length;
+
+  return {
+    linkedGoals: linked,
+    completed,
+    total: linked.length,
+    percentage: completionPercentage(completed, linked.length),
   };
 }
 

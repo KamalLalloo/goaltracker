@@ -19,6 +19,10 @@ type TrendPoint = {
   completed: number;
   total: number;
   completionRate: number;
+  consistencyScore: number;
+  projectCompletion: number;
+  projectProgress: number;
+  exerciseXp: number;
   dayRating: number | null;
   sleep: number | null;
 };
@@ -52,6 +56,18 @@ export function AnalyticsCharts({ data }: { data: TrendPoint[] }) {
         </ResponsiveContainer>
       </ChartFrame>
 
+      <ChartFrame title="Exercise XP Per Day">
+        <ResponsiveContainer height={260} width="100%">
+          <BarChart data={data}>
+            <CartesianGrid stroke="#1A1A1A" vertical={false} />
+            <XAxis dataKey="date" tick={axisStyle} tickLine={false} />
+            <YAxis tick={axisStyle} tickLine={false} />
+            <Tooltip contentStyle={tooltipStyle} />
+            <Bar dataKey="exerciseXp" fill="#A7F3D0" radius={[8, 8, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartFrame>
+
       <ChartFrame title="XP Trend">
         <ResponsiveContainer height={260} width="100%">
           <LineChart data={data}>
@@ -79,6 +95,54 @@ export function AnalyticsCharts({ data }: { data: TrendPoint[] }) {
             <Tooltip contentStyle={tooltipStyle} />
             <Line
               dataKey="dayRating"
+              dot={false}
+              stroke="#A7F3D0"
+              strokeWidth={3}
+              type="monotone"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </ChartFrame>
+
+      <ChartFrame title="Consistency Score Trend">
+        <ResponsiveContainer height={260} width="100%">
+          <LineChart data={data}>
+            <CartesianGrid stroke="#1A1A1A" vertical={false} />
+            <XAxis dataKey="date" tick={axisStyle} tickLine={false} />
+            <YAxis domain={[0, 100]} tick={axisStyle} tickLine={false} />
+            <Tooltip contentStyle={tooltipStyle} />
+            <Line
+              dataKey="consistencyScore"
+              dot={false}
+              stroke="#34D399"
+              strokeWidth={3}
+              type="monotone"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </ChartFrame>
+
+      <ChartFrame title="Project Completion">
+        <ResponsiveContainer height={260} width="100%">
+          <BarChart data={data}>
+            <CartesianGrid stroke="#1A1A1A" vertical={false} />
+            <XAxis dataKey="date" tick={axisStyle} tickLine={false} />
+            <YAxis domain={[0, 100]} tick={axisStyle} tickLine={false} />
+            <Tooltip contentStyle={tooltipStyle} />
+            <Bar dataKey="projectCompletion" fill="#34D399" radius={[8, 8, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartFrame>
+
+      <ChartFrame title="Project Progress">
+        <ResponsiveContainer height={260} width="100%">
+          <LineChart data={data}>
+            <CartesianGrid stroke="#1A1A1A" vertical={false} />
+            <XAxis dataKey="date" tick={axisStyle} tickLine={false} />
+            <YAxis domain={[0, 100]} tick={axisStyle} tickLine={false} />
+            <Tooltip contentStyle={tooltipStyle} />
+            <Line
+              dataKey="projectProgress"
               dot={false}
               stroke="#A7F3D0"
               strokeWidth={3}

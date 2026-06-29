@@ -7,7 +7,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  Trophy,
+  FolderKanban,
   UserCircle2,
   X,
 } from "lucide-react";
@@ -22,7 +22,7 @@ const items = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/today", label: "Today", icon: CheckCircle2 },
   { href: "/journal", label: "Journal", icon: BookOpenText },
-  { href: "/achievements", label: "Achievements", icon: Trophy },
+  { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
 ];
 
