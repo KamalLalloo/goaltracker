@@ -1,7 +1,7 @@
 "use client";
 
 import { Edit3, Plus, Save, Trash2, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -31,6 +31,8 @@ const emptyForm = {
 };
 
 export default function ProjectsPage() {
+  const formRef = useRef<HTMLDivElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [goals, setGoals] = useState<DailyGoal[]>([]);
   const [form, setForm] = useState(emptyForm);
@@ -113,6 +115,7 @@ export default function ProjectsPage() {
   }
 
   function edit(project: Project) {
+    setError("");
     setEditingId(project.id);
     setForm({
       title: project.title,
@@ -121,6 +124,10 @@ export default function ProjectsPage() {
       target_date: project.target_date ?? "",
       xp_reward: project.xp_reward,
       status: String(project.status),
+    });
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      titleInputRef.current?.focus();
     });
   }
 
@@ -137,12 +144,17 @@ export default function ProjectsPage() {
         </h1>
       </header>
 
-      <Card title={editingId ? "Edit Project" : "Create Project"}>
+      <div ref={formRef}>
+      <Card
+        title={editingId ? "Edit Project" : "Create Project"}
+        eyebrow={editingId ? "Editing selected project" : undefined}
+      >
         <form className="grid gap-4" onSubmit={submit}>
           <div className="grid gap-4 md:grid-cols-2">
             <Input
               label="Title"
               onChange={(event) => setForm({ ...form, title: event.target.value })}
+              ref={titleInputRef}
               value={form.title}
             />
             <Input
@@ -206,6 +218,7 @@ export default function ProjectsPage() {
         </form>
         {error && <p className="mt-4 text-sm text-red-300">{error}</p>}
       </Card>
+      </div>
 
       {sortedProjects.length === 0 ? (
         <EmptyState>No projects yet.</EmptyState>

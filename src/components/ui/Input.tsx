@@ -1,10 +1,13 @@
-import type { InputHTMLAttributes } from "react";
+import { forwardRef, type InputHTMLAttributes } from "react";
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   label?: string;
 };
 
-export function Input({ label, className = "", ...props }: InputProps) {
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
+  { label, className = "", ...props },
+  ref,
+) {
   return (
     <label className="block">
       {label && (
@@ -14,8 +17,9 @@ export function Input({ label, className = "", ...props }: InputProps) {
       )}
       <input
         className={`h-11 w-full rounded-2xl border border-[#1A1A1A] bg-black/40 px-4 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-[#34D399]/70 ${className}`}
+        ref={ref}
         {...props}
       />
     </label>
   );
-}
+});
