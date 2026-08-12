@@ -3,6 +3,7 @@
 import {
   BarChart3,
   CheckCircle2,
+  CalendarClock,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -20,6 +21,7 @@ import { getCurrentUser } from "@/lib/auth/client";
 const items = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/today", label: "Today", icon: CheckCircle2 },
+  { href: "/planner", label: "Planner", icon: CalendarClock },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
 ];

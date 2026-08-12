@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const protectedRoutes = ["/", "/today", "/projects", "/analytics"];
+const protectedRoutes = ["/", "/today", "/planner", "/projects", "/analytics"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -55,6 +55,7 @@ export const config = {
   matcher: [
     "/",
     "/today/:path*",
+    "/planner/:path*",
     "/analytics/:path*",
     "/projects/:path*",
     "/login",
