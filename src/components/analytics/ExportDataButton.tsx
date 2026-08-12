@@ -63,13 +63,6 @@ export function ExportDataButton() {
         { header: "Exercise Intensity", key: "intensity" },
         { header: "Exercise XP", key: "exerciseXp" },
         { header: "Weight", key: "weight" },
-        { header: "Quote", key: "quote" },
-        { header: "What Went Well", key: "well" },
-        { header: "What Could Improve", key: "improve" },
-        { header: "What Did I Learn", key: "learn" },
-        { header: "Idea Of Day", key: "idea" },
-        { header: "Biggest Win", key: "win" },
-        { header: "Tomorrow Focus", key: "focus" },
       ];
       entries
         .filter((entry) => entry.entry_date <= today)
@@ -83,13 +76,6 @@ export function ExportDataButton() {
             intensity: entry.exercise_intensity,
             exerciseXp: exerciseXPForEntry(entry),
             weight: entry.weight,
-            quote: entry.quote,
-            well: entry.what_went_well,
-            improve: entry.what_could_improve,
-            learn: entry.what_did_i_learn,
-            idea: entry.idea_of_day,
-            win: entry.biggest_win,
-            focus: entry.tomorrow_focus,
           });
         });
 

@@ -5,7 +5,6 @@ import { DailyGoalsCard } from "@/components/dashboard/DailyGoalsCard";
 import { HeroCard } from "@/components/dashboard/HeroCard";
 import { OverdueGoalsCard } from "@/components/dashboard/OverdueGoalsCard";
 import { ProgressCard } from "@/components/dashboard/ProgressCard";
-import { QuoteCard } from "@/components/dashboard/QuoteCard";
 import { SummaryCard } from "@/components/dashboard/SummaryCard";
 import { UpcomingGoalsCard } from "@/components/dashboard/UpcomingGoalsCard";
 import { XPBreakdownCard } from "@/components/dashboard/XPBreakdownCard";
@@ -161,7 +160,6 @@ export default function DashboardPage() {
         <OverdueGoalsCard goals={overdueGoals} />
       </div>
       <div className="grid gap-6">
-        <QuoteCard quote={entry?.quote} />
         <SummaryCard entry={entry} />
       </div>
     </div>

@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { FoodForm } from "@/components/today/FoodForm";
 import { GoalsForm } from "@/components/today/GoalsForm";
 import { HealthForm } from "@/components/today/HealthForm";
-import { QuoteForm } from "@/components/today/QuoteForm";
-import { ReflectionForm } from "@/components/today/ReflectionForm";
 import { Input } from "@/components/ui/Input";
 import { fetchEntry } from "@/lib/actions/entries";
 import { fetchFoodEntries } from "@/lib/actions/food";
@@ -74,10 +72,8 @@ export default function TodayPage() {
         onChange={setGoals}
         projects={projects}
       />
-      <ReflectionForm date={selectedDate} entry={entry} onChange={setEntry} />
       <HealthForm date={selectedDate} entry={entry} onChange={setEntry} />
       <FoodForm date={selectedDate} foods={foods} onChange={setFoods} />
-      <QuoteForm date={selectedDate} entry={entry} onChange={setEntry} />
     </div>
   );
 }

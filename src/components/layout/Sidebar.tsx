@@ -3,7 +3,6 @@
 import {
   BarChart3,
   CheckCircle2,
-  BookOpenText,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -21,7 +20,6 @@ import { getCurrentUser } from "@/lib/auth/client";
 const items = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/today", label: "Today", icon: CheckCircle2 },
-  { href: "/journal", label: "Journal", icon: BookOpenText },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
 ];
