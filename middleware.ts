@@ -1,7 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const protectedRoutes = ["/", "/today", "/planner", "/projects", "/analytics"];
+const protectedRoutes = [
+  "/",
+  "/today",
+  "/planner",
+  "/lessons",
+  "/projects",
+  "/analytics",
+];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -56,6 +63,7 @@ export const config = {
     "/",
     "/today/:path*",
     "/planner/:path*",
+    "/lessons/:path*",
     "/analytics/:path*",
     "/projects/:path*",
     "/login",

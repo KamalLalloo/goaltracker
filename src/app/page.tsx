@@ -17,6 +17,11 @@ import { fetchGoals } from "@/lib/actions/goals";
 import { fetchProjects } from "@/lib/actions/projects";
 import type { DailyEntry, DailyGoal, Project } from "@/lib/types";
 import {
+  dailyLifeLesson,
+  type LifeLesson,
+  readLifeLessons,
+} from "@/lib/utils/life-lessons";
+import {
   addDaysISO,
   completedGoalXP,
   exerciseXP,
@@ -33,6 +38,7 @@ export default function DashboardPage() {
   const [entry, setEntry] = useState<DailyEntry | null>(null);
   const [entries, setEntries] = useState<DailyEntry[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [lessons] = useState<LifeLesson[]>(() => readLifeLessons());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -106,6 +112,10 @@ export default function DashboardPage() {
     () => buildInsights(goals, entries, today),
     [entries, goals, today],
   );
+  const lessonForToday = useMemo(
+    () => dailyLifeLesson(lessons, today),
+    [lessons, today],
+  );
 
   if (loading) {
     return <PageShell>Loading command center...</PageShell>;
@@ -129,6 +139,7 @@ export default function DashboardPage() {
         <TodayFocusCard goal={focusGoal} />
         <ActiveProjectsCard goals={goals} projects={activeProjects} />
       </div>
+      <DailyLessonCard lesson={lessonForToday} />
       <div className="grid gap-6 xl:grid-cols-[1.5fr_0.8fr]">
         <DailyGoalsCard
           goals={todayGoals}
@@ -163,6 +174,18 @@ export default function DashboardPage() {
         <SummaryCard entry={entry} />
       </div>
     </div>
+  );
+}
+
+function DailyLessonCard({ lesson }: { lesson: LifeLesson | null }) {
+  return (
+    <Card title="Life Lesson Of The Day">
+      {lesson ? (
+        <p className="text-lg leading-8 text-white">{lesson.text}</p>
+      ) : (
+        <EmptyState>No life lessons added yet.</EmptyState>
+      )}
+    </Card>
   );
 }
 
