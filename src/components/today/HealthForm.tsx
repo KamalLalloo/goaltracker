@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { Textarea } from "@/components/ui/Textarea";
 import { upsertEntry } from "@/lib/actions/entries";
 import type { DailyEntry } from "@/lib/types";
 import { exerciseXPForEntry } from "@/lib/utils/xp";
@@ -25,6 +26,7 @@ export function HealthForm({ date, entry, onChange }: Props) {
     exercise_intensity: entry?.exercise_intensity ?? "Medium",
     weight: entry?.weight ?? 0,
     mood: entry?.mood ?? 7,
+    idea_of_day: entry?.idea_of_day ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -115,6 +117,15 @@ export function HealthForm({ date, entry, onChange }: Props) {
             value={form.mood}
           />
         </label>
+        <Textarea
+          className="min-h-24 md:col-span-2"
+          label="Day Comment"
+          onChange={(event) =>
+            setForm({ ...form, idea_of_day: event.target.value })
+          }
+          placeholder="Add a short comment on the day."
+          value={form.idea_of_day}
+        />
         <Input
           label="Weight (kg)"
           min={0}
