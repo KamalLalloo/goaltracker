@@ -1,6 +1,13 @@
 "use client";
 
-import { Activity, CalendarDays, Dumbbell, Moon, Scale, Smile, Utensils } from "lucide-react";
+import {
+  Activity,
+  CalendarDays,
+  CheckCircle2,
+  Dumbbell,
+  Smile,
+  Utensils,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -44,17 +51,20 @@ export default function TimelinePage() {
   const days = useMemo(
     () =>
       entries.map((entry) => {
-        const dayGoals = goals.filter((goal) => goal.goal_date === entry.entry_date);
-        const completedGoals = dayGoals.filter((goal) => goal.completed).length;
+        const dayGoals = goals.filter(
+          (goal) => goal.goal_date === entry.entry_date,
+        );
+        const completedGoalItems = dayGoals.filter((goal) => goal.completed);
         const foodCount = foods.filter(
           (food) => food.entry_date === entry.entry_date,
         ).length;
 
         return {
           entry,
-          completedGoals,
+          completedGoalItems,
+          completedGoals: completedGoalItems.length,
           totalGoals: dayGoals.length,
-          completion: completionPercentage(completedGoals, dayGoals.length),
+          completion: completionPercentage(completedGoalItems.length, dayGoals.length),
           foodCount,
           exerciseXp: exerciseXPForEntry(entry),
         };
@@ -112,30 +122,43 @@ export default function TimelinePage() {
                     value={`${day.completedGoals}/${day.totalGoals} · ${day.completion}%`}
                   />
                   <Metric
-                    icon={<Moon size={17} />}
-                    label="Sleep"
-                    value={day.entry.sleep_score ? `${day.entry.sleep_score}/100` : "--"}
-                  />
-                  <Metric
                     icon={<Dumbbell size={17} />}
                     label="Exercise"
                     value={`${day.entry.exercise_minutes ?? 0} min · ${day.exerciseXp} XP`}
-                  />
-                  <Metric
-                    icon={<Activity size={17} />}
-                    label="Intensity"
-                    value={day.entry.exercise_intensity ?? "--"}
-                  />
-                  <Metric
-                    icon={<Scale size={17} />}
-                    label="Weight"
-                    value={day.entry.weight ? `${day.entry.weight} kg` : "--"}
                   />
                   <Metric
                     icon={<Utensils size={17} />}
                     label="Food Items"
                     value={day.foodCount}
                   />
+                </div>
+
+                <div className="mt-5 rounded-[18px] border border-[#1A1A1A] bg-black/25 p-4">
+                  <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
+                    <CheckCircle2 size={17} className="text-[#34D399]" />
+                    Goals Completed
+                  </div>
+                  {day.completedGoalItems.length === 0 ? (
+                    <p className="text-sm text-[#A1A1AA]">
+                      No goals completed on this day.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {day.completedGoalItems.map((goal) => (
+                        <div
+                          className="flex items-center justify-between gap-3 rounded-2xl border border-[#1A1A1A] bg-black/30 px-3 py-2"
+                          key={goal.id}
+                        >
+                          <p className="min-w-0 truncate text-sm text-white">
+                            {goal.title}
+                          </p>
+                          <span className="shrink-0 text-xs font-semibold text-[#34D399]">
+                            {goal.xp_value} XP
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </Card>
             </div>
