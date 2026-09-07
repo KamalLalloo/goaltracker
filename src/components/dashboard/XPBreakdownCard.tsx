@@ -3,18 +3,16 @@ import { Card } from "@/components/ui/Card";
 type Props = {
   goalXp: number;
   exerciseXp: number;
-  projectXp: number;
 };
 
-export function XPBreakdownCard({ goalXp, exerciseXp, projectXp }: Props) {
-  const total = goalXp + exerciseXp + projectXp;
+export function XPBreakdownCard({ goalXp, exerciseXp }: Props) {
+  const total = goalXp + exerciseXp;
 
   return (
     <Card title="XP Breakdown">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-3">
         <BreakdownItem label="Goal XP" value={goalXp} />
         <BreakdownItem label="Exercise XP" value={exerciseXp} />
-        <BreakdownItem label="Project XP" value={projectXp} />
         <BreakdownItem accent label="Total XP" value={total} />
       </div>
     </Card>

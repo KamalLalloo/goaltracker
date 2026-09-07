@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     template: "%s | GoalTracker",
   },
   description:
-    "Personal operating system for goals, projects, reflections, and analytics.",
+    "Personal operating system for goals, lessons, health, and analytics.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,

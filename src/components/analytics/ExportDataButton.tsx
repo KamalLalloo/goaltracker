@@ -6,11 +6,9 @@ import { Button } from "@/components/ui/Button";
 import { fetchEntries } from "@/lib/actions/entries";
 import { fetchFoodEntries } from "@/lib/actions/food";
 import { fetchGoals } from "@/lib/actions/goals";
-import { fetchProjects } from "@/lib/actions/projects";
 import {
   completedGoalXP,
   exerciseXPForEntry,
-  projectXP,
   todayISO,
 } from "@/lib/utils/xp";
 
@@ -35,20 +33,15 @@ export function ExportDataButton() {
       setError("");
       const ExcelJS = await import("exceljs");
       const start = rangeStart(range);
-      const [entries, goals, projects, foods] = await Promise.all([
+      const [entries, goals, foods] = await Promise.all([
         fetchEntries(start ?? undefined),
         fetchGoals(),
-        fetchProjects(),
         fetchFoodEntries(undefined, start ?? undefined),
       ]);
       const today = todayISO();
       const filteredGoals = goals.filter(
         (goal) => (!start || goal.goal_date >= start) && goal.goal_date <= today,
       );
-      const filteredProjects = projects.filter(
-        (project) => !start || !project.target_date || project.target_date >= start,
-      );
-
       const workbook = new ExcelJS.Workbook();
       workbook.creator = "GoalTracker";
       workbook.created = new Date();
@@ -95,26 +88,6 @@ export function ExportDataButton() {
         });
       });
 
-      const projectsSheet = workbook.addWorksheet("Projects");
-      projectsSheet.columns = [
-        { header: "Target Date", key: "date" },
-        { header: "Title", key: "title" },
-        { header: "Description", key: "description" },
-        { header: "Priority", key: "priority" },
-        { header: "Status", key: "status" },
-        { header: "XP Reward", key: "xp" },
-      ];
-      filteredProjects.forEach((project) => {
-        projectsSheet.addRow({
-          date: project.target_date,
-          title: project.title,
-          description: project.description,
-          priority: project.priority,
-          status: project.status,
-          xp: project.xp_reward,
-        });
-      });
-
       const foodSheet = workbook.addWorksheet("Food");
       foodSheet.columns = [
         { header: "Date", key: "date" },
@@ -129,7 +102,6 @@ export function ExportDataButton() {
       const summarySheet = workbook.addWorksheet("XP Summary");
       summarySheet.addRow(["Goal XP", completedGoalXP(filteredGoals)]);
       summarySheet.addRow(["Exercise XP", entries.reduce((sum, entry) => sum + exerciseXPForEntry(entry), 0)]);
-      summarySheet.addRow(["Project XP", projectXP(filteredProjects)]);
 
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], {

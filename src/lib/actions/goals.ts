@@ -25,7 +25,6 @@ export async function createGoal(input: {
   goal_date: string;
   title: string;
   xp_value: number;
-  project_id?: string | null;
 }) {
   const user = await getCurrentUser();
   const { data, error } = await supabase
@@ -35,7 +34,6 @@ export async function createGoal(input: {
       goal_date: input.goal_date,
       title: input.title,
       xp_value: input.xp_value,
-      project_id: input.project_id || null,
       completed: false,
     })
     .select("*")
@@ -47,7 +45,7 @@ export async function createGoal(input: {
 
 export async function updateGoal(
   id: string,
-  input: Partial<Pick<DailyGoal, "title" | "xp_value" | "completed" | "project_id">>,
+  input: Partial<Pick<DailyGoal, "title" | "goal_date" | "xp_value" | "completed">>,
 ) {
   const user = await getCurrentUser();
   const { data, error } = await supabase

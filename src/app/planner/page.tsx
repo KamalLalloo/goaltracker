@@ -15,8 +15,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Input";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { createGoal, deleteGoal, fetchGoals } from "@/lib/actions/goals";
-import { fetchProjects } from "@/lib/actions/projects";
-import type { DailyGoal, Project } from "@/lib/types";
+import type { DailyGoal } from "@/lib/types";
 import { addDaysISO, todayISO } from "@/lib/utils/xp";
 
 function orderKey(date: string) {
@@ -26,11 +25,9 @@ function orderKey(date: string) {
 export default function PlannerPage() {
   const [selectedDate, setSelectedDate] = useState(() => addDaysISO(todayISO(), 1));
   const [goals, setGoals] = useState<DailyGoal[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
   const [orderedIds, setOrderedIds] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [xp, setXp] = useState(5);
-  const [projectId, setProjectId] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -40,12 +37,8 @@ export default function PlannerPage() {
       try {
         setLoading(true);
         setError("");
-        const [goalData, projectData] = await Promise.all([
-          fetchGoals(selectedDate),
-          fetchProjects(),
-        ]);
+        const goalData = await fetchGoals(selectedDate);
         setGoals(goalData);
-        setProjects(projectData);
         setOrderedIds(readStoredOrder(selectedDate, goalData));
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load planner.");
@@ -86,7 +79,6 @@ export default function PlannerPage() {
         goal_date: selectedDate,
         title: title.trim(),
         xp_value: xp,
-        project_id: projectId || null,
       });
       const nextGoals = [...goals, goal];
       const nextOrder = [...orderedIds, goal.id];
@@ -95,7 +87,6 @@ export default function PlannerPage() {
       writeStoredOrder(selectedDate, nextOrder);
       setTitle("");
       setXp(5);
-      setProjectId("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add goal.");
     } finally {
@@ -156,10 +147,7 @@ export default function PlannerPage() {
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
         <Card title="Plan Goals">
-          <form
-            className="grid gap-4 md:grid-cols-[1fr_160px_220px_auto]"
-            onSubmit={addGoal}
-          >
+          <form className="grid gap-4 md:grid-cols-[1fr_160px_auto]" onSubmit={addGoal}>
             <Input
               label="Goal"
               onChange={(event) => setTitle(event.target.value)}
@@ -178,23 +166,6 @@ export default function PlannerPage() {
                 type="range"
                 value={xp}
               />
-            </label>
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-[#A1A1AA]">
-                Project
-              </span>
-              <select
-                className="h-11 w-full rounded-2xl border border-[#1A1A1A] bg-black/40 px-4 text-sm text-white outline-none focus:border-[#34D399]/70"
-                onChange={(event) => setProjectId(event.target.value)}
-                value={projectId}
-              >
-                <option value="">No project</option>
-                {projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.title}
-                  </option>
-                ))}
-              </select>
             </label>
             <Button className="self-end" disabled={saving} type="submit">
               <Plus size={17} />
@@ -251,15 +222,7 @@ export default function PlannerPage() {
                       {goal.title}
                     </p>
                   </div>
-                  <p className="mt-1 text-xs text-[#A1A1AA]">
-                    {goal.xp_value} XP
-                    {goal.project_id
-                      ? ` · ${
-                          projects.find((project) => project.id === goal.project_id)
-                            ?.title ?? "Project"
-                        }`
-                      : ""}
-                  </p>
+                  <p className="mt-1 text-xs text-[#A1A1AA]">{goal.xp_value} XP</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button

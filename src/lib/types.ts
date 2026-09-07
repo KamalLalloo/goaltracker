@@ -25,22 +25,6 @@ export type DailyGoal = {
   title: string;
   xp_value: number;
   completed: boolean;
-  project_id: string | null;
-  created_at: string | null;
-};
-
-export type ProjectPriority = "Low" | "Medium" | "High" | "Critical";
-export type ProjectStatus = "Planning" | "Active" | "Paused" | "Completed";
-
-export type Project = {
-  id: string;
-  user_id: string | null;
-  title: string;
-  description: string | null;
-  priority: ProjectPriority | string;
-  target_date: string | null;
-  xp_reward: number;
-  status: ProjectStatus | string;
   created_at: string | null;
 };
 

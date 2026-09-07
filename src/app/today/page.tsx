@@ -8,15 +8,13 @@ import { Input } from "@/components/ui/Input";
 import { fetchEntry } from "@/lib/actions/entries";
 import { fetchFoodEntries } from "@/lib/actions/food";
 import { fetchGoals } from "@/lib/actions/goals";
-import { fetchProjects } from "@/lib/actions/projects";
-import type { DailyEntry, DailyGoal, FoodEntry, Project } from "@/lib/types";
+import type { DailyEntry, DailyGoal, FoodEntry } from "@/lib/types";
 import { todayISO } from "@/lib/utils/xp";
 
 export default function TodayPage() {
   const [goals, setGoals] = useState<DailyGoal[]>([]);
   const [entry, setEntry] = useState<DailyEntry | null>(null);
   const [foods, setFoods] = useState<FoodEntry[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
   const [selectedDate, setSelectedDate] = useState(todayISO());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -25,16 +23,14 @@ export default function TodayPage() {
     async function load() {
       try {
         setLoading(true);
-        const [goalsData, entryData, foodData, projectData] = await Promise.all([
+        const [goalsData, entryData, foodData] = await Promise.all([
           fetchGoals(),
           fetchEntry(selectedDate),
           fetchFoodEntries(selectedDate),
-          fetchProjects(),
         ]);
         setGoals(goalsData);
         setEntry(entryData);
         setFoods(foodData);
-        setProjects(projectData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load today.");
       } finally {
@@ -66,12 +62,7 @@ export default function TodayPage() {
           value={selectedDate}
         />
       </header>
-      <GoalsForm
-        date={selectedDate}
-        goals={goals}
-        onChange={setGoals}
-        projects={projects}
-      />
+      <GoalsForm date={selectedDate} goals={goals} onChange={setGoals} />
       <HealthForm date={selectedDate} entry={entry} onChange={setEntry} />
       <FoodForm date={selectedDate} foods={foods} onChange={setFoods} />
     </div>

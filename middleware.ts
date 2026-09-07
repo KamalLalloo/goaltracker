@@ -4,10 +4,10 @@ import { NextResponse, type NextRequest } from "next/server";
 const protectedRoutes = [
   "/",
   "/today",
+  "/todos",
   "/planner",
   "/timeline",
   "/lessons",
-  "/projects",
   "/analytics",
 ];
 
@@ -63,11 +63,11 @@ export const config = {
   matcher: [
     "/",
     "/today/:path*",
+    "/todos/:path*",
     "/planner/:path*",
     "/timeline/:path*",
     "/lessons/:path*",
     "/analytics/:path*",
-    "/projects/:path*",
     "/login",
   ],
 };

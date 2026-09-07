@@ -7,9 +7,9 @@ import {
   History,
   Lightbulb,
   LayoutDashboard,
+  ListTodo,
   LogOut,
   Menu,
-  FolderKanban,
   UserCircle2,
   X,
 } from "lucide-react";
@@ -23,10 +23,10 @@ import { getCurrentUser } from "@/lib/auth/client";
 const items = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/today", label: "Today", icon: CheckCircle2 },
+  { href: "/todos", label: "To Do", icon: ListTodo },
   { href: "/planner", label: "Planner", icon: CalendarClock },
   { href: "/timeline", label: "Timeline", icon: History },
   { href: "/lessons", label: "Lessons", icon: Lightbulb },
-  { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
 ];
 

@@ -7,8 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { fetchEntries } from "@/lib/actions/entries";
 import { fetchGoals } from "@/lib/actions/goals";
-import { fetchProjects } from "@/lib/actions/projects";
-import type { DailyEntry, DailyGoal, Project } from "@/lib/types";
+import type { DailyEntry, DailyGoal } from "@/lib/types";
 import {
   bestStreak,
   completedGoalXP,
@@ -17,8 +16,6 @@ import {
   exerciseXP,
   exerciseXPForEntry,
   goalStats,
-  projectProgress,
-  projectXP,
   todayISO,
 } from "@/lib/utils/xp";
 
@@ -28,7 +25,6 @@ export default function AnalyticsPage() {
   const [filter, setFilter] = useState<Filter>("week");
   const [goals, setGoals] = useState<DailyGoal[]>([]);
   const [entries, setEntries] = useState<DailyEntry[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -40,10 +36,9 @@ export default function AnalyticsPage() {
       try {
         setLoading(true);
         setError("");
-        const [goalsData, entriesData, projectData] = await Promise.all([
+        const [goalsData, entriesData] = await Promise.all([
           fetchGoals(),
           fetchEntries(startDate ?? undefined),
-          fetchProjects(),
         ]);
         setGoals(
           goalsData.filter(
@@ -51,7 +46,6 @@ export default function AnalyticsPage() {
           ),
         );
         setEntries(entriesData.filter((entry) => entry.entry_date <= today));
-        setProjects(projectData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load analytics.");
       } finally {
@@ -62,15 +56,8 @@ export default function AnalyticsPage() {
     load();
   }, [startDate, today]);
 
-  const stats = useMemo(() => buildStats(goals, entries, projects), [
-    entries,
-    goals,
-    projects,
-  ]);
-  const chartData = useMemo(
-    () => buildTrend(goals, entries, projects),
-    [entries, goals, projects],
-  );
+  const stats = useMemo(() => buildStats(goals, entries), [entries, goals]);
+  const chartData = useMemo(() => buildTrend(goals, entries), [entries, goals]);
 
   if (loading) return <PageShell>Loading analytics...</PageShell>;
   if (error) return <PageShell>{error}</PageShell>;
@@ -87,23 +74,23 @@ export default function AnalyticsPage() {
           </h1>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="grid grid-cols-4 rounded-2xl border border-[#1A1A1A] bg-[#0D0D0D] p-1">
-          {(["week", "month", "year", "all"] as Filter[]).map((item) => (
-            <button
-              className={`rounded-xl px-4 py-2 text-sm font-semibold capitalize transition ${
-                filter === item
-                  ? "bg-[#34D399] text-black"
-                  : "text-[#A1A1AA] hover:text-white"
-              }`}
-              key={item}
-              onClick={() => setFilter(item)}
-              type="button"
-            >
-              {item === "all" ? "All Time" : item}
-            </button>
-          ))}
-        </div>
-        <ExportDataButton />
+          <div className="grid grid-cols-4 rounded-2xl border border-[#1A1A1A] bg-[#0D0D0D] p-1">
+            {(["week", "month", "year", "all"] as Filter[]).map((item) => (
+              <button
+                className={`rounded-xl px-4 py-2 text-sm font-semibold capitalize transition ${
+                  filter === item
+                    ? "bg-[#34D399] text-black"
+                    : "text-[#A1A1AA] hover:text-white"
+                }`}
+                key={item}
+                onClick={() => setFilter(item)}
+                type="button"
+              >
+                {item === "all" ? "All Time" : item}
+              </button>
+            ))}
+          </div>
+          <ExportDataButton />
         </div>
       </header>
 
@@ -118,12 +105,10 @@ export default function AnalyticsPage() {
         <Metric label="Avg Sleep" value={stats.averageSleep} />
         <Metric label="Avg Exercise" value={`${stats.averageExercise} min`} />
         <Metric label="Avg Day Rating" value={stats.averageMood} />
-        <Metric label="Projects" value={projects.length} />
         <Metric label="Average Daily XP" value={stats.averageDailyXp} />
         <Metric label="Best XP Day" value={stats.bestXpDay} />
         <Metric label="Total Exercise XP" value={stats.totalExerciseXp} />
         <Metric label="Total Goal XP" value={stats.totalGoalXp} />
-        <Metric label="Total Project XP" value={stats.totalProjectXp} />
       </div>
 
       {chartData.length === 0 ? (
@@ -144,11 +129,7 @@ function Metric({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function buildStats(
-  goals: DailyGoal[],
-  entries: DailyEntry[],
-  projects: Project[],
-) {
+function buildStats(goals: DailyGoal[], entries: DailyEntry[]) {
   const stats = goalStats(goals);
   const sleepScores = entries
     .map((entry) => entry.sleep_score)
@@ -160,13 +141,12 @@ function buildStats(
     .map((entry) => entry.mood)
     .filter((mood): mood is number => typeof mood === "number");
 
-  const trend = buildTrend(goals, entries, projects);
+  const trend = buildTrend(goals, entries);
   const goalXp = completedGoalXP(goals);
   const entryExerciseXp = exerciseXP(entries);
-  const awardedXp = projectXP(projects);
 
   return {
-    totalXp: goalXp + entryExerciseXp + awardedXp,
+    totalXp: goalXp + entryExerciseXp,
     totalGoals: stats.total,
     completedGoals: stats.completed,
     missedGoals: stats.missed,
@@ -176,27 +156,18 @@ function buildStats(
     averageSleep: average(sleepScores),
     averageExercise: average(exerciseMinutes),
     averageMood: average(moods),
-    projectCount: projects.length,
     averageDailyXp: average(trend.map((day) => day.xp)),
     bestXpDay: Math.max(0, ...trend.map((day) => day.xp)),
     totalExerciseXp: entryExerciseXp,
     totalGoalXp: goalXp,
-    totalProjectXp: awardedXp,
   };
 }
 
-function buildTrend(
-  goals: DailyGoal[],
-  entries: DailyEntry[],
-  projects: Project[],
-) {
+function buildTrend(goals: DailyGoal[], entries: DailyEntry[]) {
   const dates = Array.from(
     new Set([
       ...goals.map((goal) => goal.goal_date),
       ...entries.map((entry) => entry.entry_date),
-      ...projects
-        .map((project) => project.target_date)
-        .filter((date): date is string => Boolean(date)),
     ]),
   ).sort();
   let cumulativeXp = 0;
@@ -204,19 +175,11 @@ function buildTrend(
   return dates.map((date) => {
     const dayGoals = goals.filter((goal) => goal.goal_date === date);
     const entry = entries.find((item) => item.entry_date === date);
-    const dayProjectXp = projects
-      .filter((project) => project.status === "Completed" && project.target_date === date)
-      .reduce((sum, project) => sum + (project.xp_reward || 0), 0);
     const exerciseXp = exerciseXPForEntry(entry);
-    const dayXp =
-      completedGoalXP(dayGoals) +
-      exerciseXp +
-      dayProjectXp;
+    const dayXp = completedGoalXP(dayGoals) + exerciseXp;
     cumulativeXp += dayXp;
     const completed = dayGoals.filter((goal) => goal.completed).length;
     const completionRate = completionPercentage(completed, dayGoals.length);
-    const projectPercents = projects.map((project) => projectProgress(project, goals).percentage);
-    const projectProgressAverage = average(projectPercents);
 
     return {
       date: date.slice(5),
@@ -227,11 +190,6 @@ function buildTrend(
       total: dayGoals.length,
       completionRate,
       consistencyScore: consistencyScore(completionRate, entry),
-      projectCompletion: completionPercentage(
-        projects.filter((project) => project.status === "Completed").length,
-        projects.length,
-      ),
-      projectProgress: Math.round(projectProgressAverage),
       dayRating: entry?.mood ?? null,
       sleep: entry?.sleep_score ?? null,
     };
