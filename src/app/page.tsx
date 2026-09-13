@@ -34,6 +34,7 @@ export default function DashboardPage() {
   const [entry, setEntry] = useState<DailyEntry | null>(null);
   const [entries, setEntries] = useState<DailyEntry[]>([]);
   const [lessons] = useState<LifeLesson[]>(() => readLifeLessons());
+  const [lessonOffset, setLessonOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -64,6 +65,16 @@ export default function DashboardPage() {
   const exerciseXp = useMemo(() => exerciseXP(entries), [entries]);
   const xp = useMemo(() => totalXP(goals, entries), [entries, goals]);
   const today = todayISO();
+  useEffect(() => {
+    if (!lessons.length) return;
+
+    const interval = window.setInterval(() => {
+      setLessonOffset((current) => current + 1);
+    }, 5 * 60 * 1000);
+
+    return () => window.clearInterval(interval);
+  }, [lessons.length]);
+
   const todayGoals = useMemo(
     () => goals.filter((goal) => goal.goal_date === today),
     [goals, today],
@@ -91,10 +102,16 @@ export default function DashboardPage() {
     () => buildInsights(goals, entries, today),
     [entries, goals, today],
   );
-  const lessonForToday = useMemo(
-    () => dailyLifeLesson(lessons, today),
-    [lessons, today],
-  );
+  const lessonBaseIndex = useMemo(() => {
+    const lessonForToday = dailyLifeLesson(lessons, today);
+    return lessonForToday
+      ? Math.max(lessons.findIndex((lesson) => lesson.id === lessonForToday.id), 0)
+      : 0;
+  }, [lessons, today]);
+  const activeLesson =
+    lessons.length > 0
+      ? lessons[(lessonBaseIndex + lessonOffset) % lessons.length]
+      : null;
 
   if (loading) {
     return <PageShell>Loading command center...</PageShell>;
@@ -107,6 +124,7 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <HeroCard totalXp={xp} />
+      <DailyLessonCard lesson={activeLesson} />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Today's Progress" value={`${todayStats.completed}/${todayStats.total}`} detail={`${todayStats.percentage}% complete`} />
         <MetricCard label="Today's Goals" value={todayGoals.length} detail="Scheduled today" />
@@ -114,7 +132,6 @@ export default function DashboardPage() {
         <MetricCard label="Insights" value={insights.length} detail="Signals today" />
       </div>
       <TodayFocusCard goal={focusGoal} />
-      <DailyLessonCard lesson={lessonForToday} />
       <div className="grid gap-6 xl:grid-cols-[1.5fr_0.8fr]">
         <DailyGoalsCard
           goals={todayGoals}
@@ -150,7 +167,7 @@ export default function DashboardPage() {
 
 function DailyLessonCard({ lesson }: { lesson: LifeLesson | null }) {
   return (
-    <Card title="Life Lesson Of The Day">
+    <Card title="Life Lessons">
       {lesson ? (
         <p className="text-lg leading-8 text-white">{lesson.text}</p>
       ) : (
