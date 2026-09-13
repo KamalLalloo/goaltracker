@@ -102,7 +102,7 @@ export default function AnalyticsPage() {
         <Metric label="Success Rate" value={`${stats.successRate}%`} />
         <Metric label="Current Streak" value={stats.currentStreak} />
         <Metric label="Best Streak" value={stats.bestStreak} />
-        <Metric label="Avg Sleep" value={stats.averageSleep} />
+        <Metric label="Avg Distraction" value={stats.averageDistraction} />
         <Metric label="Avg Exercise" value={`${stats.averageExercise} min`} />
         <Metric label="Avg Day Rating" value={stats.averageMood} />
         <Metric label="Average Daily XP" value={stats.averageDailyXp} />
@@ -131,9 +131,9 @@ function Metric({ label, value }: { label: string; value: string | number }) {
 
 function buildStats(goals: DailyGoal[], entries: DailyEntry[]) {
   const stats = goalStats(goals);
-  const sleepScores = entries
-    .map((entry) => entry.sleep_score)
-    .filter((score): score is number => typeof score === "number");
+  const distractionRatings = entries
+    .map((entry) => entry.distraction_rating)
+    .filter((rating): rating is number => typeof rating === "number");
   const exerciseMinutes = entries
     .map((entry) => entry.exercise_minutes)
     .filter((minutes): minutes is number => typeof minutes === "number");
@@ -153,7 +153,7 @@ function buildStats(goals: DailyGoal[], entries: DailyEntry[]) {
     successRate: stats.percentage,
     currentStreak: currentStreak(goals),
     bestStreak: bestStreak(goals),
-    averageSleep: average(sleepScores),
+    averageDistraction: average(distractionRatings),
     averageExercise: average(exerciseMinutes),
     averageMood: average(moods),
     averageDailyXp: average(trend.map((day) => day.xp)),
@@ -191,16 +191,16 @@ function buildTrend(goals: DailyGoal[], entries: DailyEntry[]) {
       completionRate,
       consistencyScore: consistencyScore(completionRate, entry),
       dayRating: entry?.mood ?? null,
-      sleep: entry?.sleep_score ?? null,
+      distraction: entry?.distraction_rating ?? null,
     };
   });
 }
 
 function consistencyScore(goalCompletion: number, entry: DailyEntry | undefined) {
-  const sleep = Math.min(entry?.sleep_score ?? 0, 100);
+  const focus = Math.max(100 - (entry?.distraction_rating ?? 10) * 10, 0);
   const exercise = Math.min(((entry?.exercise_minutes ?? 0) / 30) * 100, 100);
   const rating = Math.min(((entry?.mood ?? 0) / 10) * 100, 100);
-  return Math.round(goalCompletion * 0.4 + sleep * 0.2 + exercise * 0.2 + rating * 0.2);
+  return Math.round(goalCompletion * 0.4 + focus * 0.2 + exercise * 0.2 + rating * 0.2);
 }
 
 function average(values: number[]) {

@@ -22,7 +22,7 @@ type TrendPoint = {
   consistencyScore: number;
   exerciseXp: number;
   dayRating: number | null;
-  sleep: number | null;
+  distraction: number | null;
 };
 
 const axisStyle = { fill: "#71717A", fontSize: 12 };
@@ -120,15 +120,15 @@ export function AnalyticsCharts({ data }: { data: TrendPoint[] }) {
         </ResponsiveContainer>
       </ChartFrame>
 
-      <ChartFrame title="Sleep Score Trend">
+      <ChartFrame title="Distraction Rating Trend">
         <ResponsiveContainer height={260} width="100%">
           <LineChart data={data}>
             <CartesianGrid stroke="#1A1A1A" vertical={false} />
             <XAxis dataKey="date" tick={axisStyle} tickLine={false} />
-            <YAxis domain={[0, 100]} tick={axisStyle} tickLine={false} />
+            <YAxis domain={[0, 10]} tick={axisStyle} tickLine={false} />
             <Tooltip contentStyle={tooltipStyle} />
             <Line
-              dataKey="sleep"
+              dataKey="distraction"
               dot={false}
               stroke="#A7F3D0"
               strokeWidth={3}

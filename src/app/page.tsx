@@ -217,10 +217,10 @@ function highestPriorityGoal(goals: DailyGoal[]) {
 }
 
 function consistencyScore(goalCompletion: number, entry: DailyEntry | null) {
-  const sleep = Math.min(entry?.sleep_score ?? 0, 100);
+  const focus = Math.max(100 - (entry?.distraction_rating ?? 10) * 10, 0);
   const exercise = Math.min(((entry?.exercise_minutes ?? 0) / 30) * 100, 100);
   const rating = Math.min(((entry?.mood ?? 0) / 10) * 100, 100);
-  return Math.round(goalCompletion * 0.4 + sleep * 0.2 + exercise * 0.2 + rating * 0.2);
+  return Math.round(goalCompletion * 0.4 + focus * 0.2 + exercise * 0.2 + rating * 0.2);
 }
 
 function buildInsights(goals: DailyGoal[], entries: DailyEntry[], today: string) {
@@ -249,10 +249,10 @@ function buildInsights(goals: DailyGoal[], entries: DailyEntry[], today: string)
   if (weekExercise > priorExercise) {
     insights.push("Exercise increased compared to last week.");
   }
-  const weekSleep = average(weekEntries.map((entry) => entry.sleep_score ?? 0));
-  const priorSleep = average(priorEntries.map((entry) => entry.sleep_score ?? 0));
-  if (weekSleep > priorSleep) {
-    insights.push("Sleep has improved over the past month.");
+  const weekDistraction = average(weekEntries.map((entry) => entry.distraction_rating ?? 0));
+  const priorDistraction = average(priorEntries.map((entry) => entry.distraction_rating ?? 0));
+  if (priorDistraction > 0 && weekDistraction < priorDistraction) {
+    insights.push("Distraction is lower than your previous week.");
   }
   if (!insights.length) {
     insights.push("Keep logging consistently to unlock better insights.");

@@ -20,12 +20,12 @@ const intensities = ["Low", "Medium", "High", "Peak"];
 
 export function HealthForm({ date, entry, onChange }: Props) {
   const [form, setForm] = useState({
-    sleep_score: entry?.sleep_score ?? 75,
+    sleep_time: entry?.sleep_time?.slice(0, 5) ?? "23:00",
     wake_time: entry?.wake_time?.slice(0, 5) ?? "07:00",
     exercise_minutes: entry?.exercise_minutes ?? 0,
     exercise_intensity: entry?.exercise_intensity ?? "Medium",
-    weight: entry?.weight ?? 0,
     mood: entry?.mood ?? 7,
+    distraction_rating: entry?.distraction_rating ?? 5,
     idea_of_day: entry?.idea_of_day ?? "",
   });
   const [saving, setSaving] = useState(false);
@@ -56,21 +56,12 @@ export function HealthForm({ date, entry, onChange }: Props) {
       }
     >
       <div className="grid gap-5 md:grid-cols-2">
-        <label>
-          <span className="mb-2 block text-sm font-medium text-[#A1A1AA]">
-            Sleep Score: {form.sleep_score}
-          </span>
-          <input
-            className="h-11 w-full"
-            max={100}
-            min={0}
-            onChange={(event) =>
-              setForm({ ...form, sleep_score: Number(event.target.value) })
-            }
-            type="range"
-            value={form.sleep_score}
-          />
-        </label>
+        <Input
+          label="Sleep Time"
+          onChange={(event) => setForm({ ...form, sleep_time: event.target.value })}
+          type="time"
+          value={form.sleep_time}
+        />
         <Input
           label="Wake Time"
           onChange={(event) => setForm({ ...form, wake_time: event.target.value })}
@@ -117,6 +108,21 @@ export function HealthForm({ date, entry, onChange }: Props) {
             value={form.mood}
           />
         </label>
+        <label className="md:col-span-2">
+          <span className="mb-2 block text-sm font-medium text-[#A1A1AA]">
+            Distraction Rating: {form.distraction_rating}
+          </span>
+          <input
+            className="h-11 w-full"
+            max={10}
+            min={1}
+            onChange={(event) =>
+              setForm({ ...form, distraction_rating: Number(event.target.value) })
+            }
+            type="range"
+            value={form.distraction_rating}
+          />
+        </label>
         <Textarea
           className="min-h-24 md:col-span-2"
           label="Day Comment"
@@ -125,16 +131,6 @@ export function HealthForm({ date, entry, onChange }: Props) {
           }
           placeholder="Add a short comment on the day."
           value={form.idea_of_day}
-        />
-        <Input
-          label="Weight (kg)"
-          min={0}
-          onChange={(event) =>
-            setForm({ ...form, weight: Number(event.target.value) })
-          }
-          step="0.1"
-          type="number"
-          value={form.weight}
         />
         <div className="rounded-[18px] border border-[#1A1A1A] bg-black/25 p-4">
           <p className="text-sm text-[#A1A1AA]">Exercise XP</p>

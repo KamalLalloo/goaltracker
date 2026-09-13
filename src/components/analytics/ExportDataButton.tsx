@@ -50,12 +50,12 @@ export function ExportDataButton() {
       dailySheet.columns = [
         { header: "Date", key: "date" },
         { header: "Day Rating", key: "mood" },
-        { header: "Sleep Score", key: "sleep" },
+        { header: "Sleep Time", key: "sleepTime" },
         { header: "Wake Time", key: "wake" },
         { header: "Exercise Minutes", key: "minutes" },
         { header: "Exercise Intensity", key: "intensity" },
         { header: "Exercise XP", key: "exerciseXp" },
-        { header: "Weight", key: "weight" },
+        { header: "Distraction Rating", key: "distraction" },
       ];
       entries
         .filter((entry) => entry.entry_date <= today)
@@ -63,12 +63,12 @@ export function ExportDataButton() {
           dailySheet.addRow({
             date: entry.entry_date,
             mood: entry.mood,
-            sleep: entry.sleep_score,
+            sleepTime: entry.sleep_time,
             wake: entry.wake_time,
             minutes: entry.exercise_minutes,
             intensity: entry.exercise_intensity,
             exerciseXp: exerciseXPForEntry(entry),
-            weight: entry.weight,
+            distraction: entry.distraction_rating,
           });
         });
 

@@ -1,9 +1,9 @@
-import { Activity, AlarmClock, Dumbbell, Moon, Scale, Smile } from "lucide-react";
+import { Activity, AlarmClock, Dumbbell, Moon, Smile, Zap } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import type { DailyEntry } from "@/lib/types";
 
 const metrics = [
-  { key: "sleep_score", label: "Sleep Score", icon: Moon, suffix: "/100" },
+  { key: "sleep_time", label: "Sleep Time", icon: Moon, suffix: "" },
   { key: "wake_time", label: "Wake Time", icon: AlarmClock, suffix: "" },
   {
     key: "exercise_minutes",
@@ -18,7 +18,7 @@ const metrics = [
     suffix: "",
   },
   { key: "mood", label: "Day Rating", icon: Smile, suffix: "/10" },
-  { key: "weight", label: "Weight", icon: Scale, suffix: " kg" },
+  { key: "distraction_rating", label: "Distraction", icon: Zap, suffix: "/10" },
 ] as const;
 
 export function SummaryCard({ entry }: { entry: DailyEntry | null }) {
