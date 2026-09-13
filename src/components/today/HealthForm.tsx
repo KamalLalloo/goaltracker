@@ -20,7 +20,7 @@ const intensities = ["Low", "Medium", "High", "Peak"];
 
 export function HealthForm({ date, entry, onChange }: Props) {
   const [form, setForm] = useState({
-    sleep_time: entry?.sleep_time?.slice(0, 5) ?? "23:00",
+    sleep_hours: entry?.sleep_hours ?? 8,
     wake_time: entry?.wake_time?.slice(0, 5) ?? "07:00",
     exercise_minutes: entry?.exercise_minutes ?? 0,
     exercise_intensity: entry?.exercise_intensity ?? "Medium",
@@ -57,10 +57,12 @@ export function HealthForm({ date, entry, onChange }: Props) {
     >
       <div className="grid gap-5 md:grid-cols-2">
         <Input
-          label="Sleep Time"
-          onChange={(event) => setForm({ ...form, sleep_time: event.target.value })}
-          type="time"
-          value={form.sleep_time}
+          label="Sleep Hours"
+          min={0}
+          onChange={(event) => setForm({ ...form, sleep_hours: Number(event.target.value) })}
+          step="0.25"
+          type="number"
+          value={form.sleep_hours}
         />
         <Input
           label="Wake Time"

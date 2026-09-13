@@ -50,7 +50,7 @@ export function ExportDataButton() {
       dailySheet.columns = [
         { header: "Date", key: "date" },
         { header: "Day Rating", key: "mood" },
-        { header: "Sleep Time", key: "sleepTime" },
+        { header: "Sleep Hours", key: "sleepHours" },
         { header: "Wake Time", key: "wake" },
         { header: "Exercise Minutes", key: "minutes" },
         { header: "Exercise Intensity", key: "intensity" },
@@ -63,7 +63,7 @@ export function ExportDataButton() {
           dailySheet.addRow({
             date: entry.entry_date,
             mood: entry.mood,
-            sleepTime: entry.sleep_time,
+            sleepHours: entry.sleep_hours,
             wake: entry.wake_time,
             minutes: entry.exercise_minutes,
             intensity: entry.exercise_intensity,

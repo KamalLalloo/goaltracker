@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/Card";
 import type { DailyEntry } from "@/lib/types";
 
 const metrics = [
-  { key: "sleep_time", label: "Sleep Time", icon: Moon, suffix: "" },
+  { key: "sleep_hours", label: "Sleep Hours", icon: Moon, suffix: " hrs" },
   { key: "wake_time", label: "Wake Time", icon: AlarmClock, suffix: "" },
   {
     key: "exercise_minutes",

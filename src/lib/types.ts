@@ -11,7 +11,7 @@ export type DailyEntry = {
   tomorrow_focus: string | null;
   mood: number | null;
   sleep_score: number | null;
-  sleep_time: string | null;
+  sleep_hours: number | null;
   wake_time: string | null;
   exercise_minutes: number | null;
   exercise_intensity: "Low" | "Medium" | "High" | "Peak" | string | null;
@@ -50,7 +50,7 @@ export type EntryUpdate = Partial<
     | "tomorrow_focus"
     | "mood"
     | "sleep_score"
-    | "sleep_time"
+    | "sleep_hours"
     | "wake_time"
     | "exercise_minutes"
     | "exercise_intensity"
