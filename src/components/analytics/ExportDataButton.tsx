@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { fetchEntries } from "@/lib/actions/entries";
 import { fetchFoodEntries } from "@/lib/actions/food";
 import { fetchGoals } from "@/lib/actions/goals";
+import { fetchLockInSessions } from "@/lib/actions/lockIn";
 import { readLifeLessons } from "@/lib/utils/life-lessons";
 import { readMainTodos } from "@/lib/utils/main-todos";
 import {
@@ -36,10 +37,11 @@ export function ExportDataButton() {
 
       const ExcelJS = await import("exceljs");
       const start = rangeStart(range);
-      const [entries, goals, foods] = await Promise.all([
+      const [entries, goals, foods, lockIns] = await Promise.all([
         fetchEntries(start ?? undefined),
         fetchGoals(),
         fetchFoodEntries(undefined, start ?? undefined),
+        fetchLockInSessions(start ?? undefined),
       ]);
       const todos = readMainTodos();
       const lessons = readLifeLessons();
@@ -47,6 +49,9 @@ export function ExportDataButton() {
       const filteredEntries = entries.filter((entry) => isInRange(entry.entry_date, start));
       const filteredGoals = goals.filter((goal) => isInRange(goal.goal_date, start));
       const filteredFoods = foods.filter((food) => isInRange(food.entry_date, start));
+      const filteredLockIns = lockIns.filter((session) =>
+        Boolean(sessionDate(session)) && isInRange(sessionDate(session), start),
+      );
       const filteredTodos = todos.filter((todo) =>
         isInRange(todo.dueDate ?? dateFromIso(todo.createdAt), start),
       );
@@ -58,6 +63,7 @@ export function ExportDataButton() {
           ...filteredEntries.map((entry) => entry.entry_date),
           ...filteredGoals.map((goal) => goal.goal_date),
           ...filteredFoods.map((food) => food.entry_date),
+          ...filteredLockIns.map((session) => sessionDate(session)),
           ...filteredTodos.map((todo) => todo.dueDate ?? dateFromIso(todo.createdAt)),
           ...filteredLessons.map((lesson) => dateFromIso(lesson.createdAt)),
         ]),
@@ -94,6 +100,12 @@ export function ExportDataButton() {
         { header: "Missed Goals", key: "missedGoals", width: 42 },
         { header: "All Goals", key: "allGoals", width: 48 },
         { header: "Food Consumed", key: "foods", width: 42 },
+        { header: "Lock In Sessions", key: "lockInSessions", width: 48 },
+        { header: "Lock In Count", key: "lockInCount", width: 14 },
+        { header: "Lock In Completed", key: "lockInCompleted", width: 18 },
+        { header: "Focus Minutes", key: "focusMinutes", width: 14 },
+        { header: "Planned Focus Minutes", key: "plannedFocusMinutes", width: 22 },
+        { header: "Average Satisfaction", key: "averageSatisfaction", width: 20 },
         { header: "To Dos Due", key: "todosDue", width: 42 },
         { header: "Life Lessons Added", key: "lessonsAdded", width: 48 },
       ];
@@ -104,6 +116,7 @@ export function ExportDataButton() {
         const completedGoals = dayGoals.filter((goal) => goal.completed);
         const missedGoals = dayGoals.filter((goal) => !goal.completed);
         const dayFoods = filteredFoods.filter((food) => food.entry_date === date);
+        const dayLockIns = filteredLockIns.filter((session) => sessionDate(session) === date);
         const dayTodos = filteredTodos.filter(
           (todo) => (todo.dueDate ?? dateFromIso(todo.createdAt)) === date,
         );
@@ -144,6 +157,27 @@ export function ExportDataButton() {
             ),
           ),
           foods: joinItems(dayFoods.map((food) => food.food_name)),
+          lockInSessions: joinItems(
+            dayLockIns.map(
+              (session) =>
+                `${session.completed ? "Completed" : "Not completed"} - ${session.task} (${session.actual_minutes ?? 0}/${session.planned_minutes} min)`,
+            ),
+          ),
+          lockInCount: dayLockIns.length,
+          lockInCompleted: dayLockIns.filter((session) => session.completed).length,
+          focusMinutes: dayLockIns.reduce(
+            (total, session) => total + (session.actual_minutes ?? 0),
+            0,
+          ),
+          plannedFocusMinutes: dayLockIns.reduce(
+            (total, session) => total + session.planned_minutes,
+            0,
+          ),
+          averageSatisfaction: average(
+            dayLockIns
+              .map((session) => session.satisfaction_score)
+              .filter((score): score is number => typeof score === "number"),
+          ),
           todosDue: joinItems(
             dayTodos.map((todo) => `${todo.completed ? "Done" : "Open"} - ${todo.title}`),
           ),
@@ -208,8 +242,17 @@ function dateFromIso(value: string) {
   return value.slice(0, 10);
 }
 
+function sessionDate(session: { started_at: string | null; created_at: string | null }) {
+  return (session.started_at ?? session.created_at ?? "").slice(0, 10);
+}
+
 function isInRange(date: string, start: string | null) {
   return !start || date >= start;
+}
+
+function average(values: number[]) {
+  if (!values.length) return "";
+  return Math.round((values.reduce((total, value) => total + value, 0) / values.length) * 10) / 10;
 }
 
 function rangeStart(range: ExportRange) {

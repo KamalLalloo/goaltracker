@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { DailyGoalsCard } from "@/components/dashboard/DailyGoalsCard";
 import { HeroCard } from "@/components/dashboard/HeroCard";
@@ -13,7 +14,8 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { fetchEntries, fetchEntry } from "@/lib/actions/entries";
 import { fetchGoals } from "@/lib/actions/goals";
-import type { DailyEntry, DailyGoal } from "@/lib/types";
+import { fetchActiveLockInSession, fetchLockInSessions } from "@/lib/actions/lockIn";
+import type { DailyEntry, DailyGoal, LockInSession } from "@/lib/types";
 import {
   dailyLifeLesson,
   type LifeLesson,
@@ -33,6 +35,8 @@ export default function DashboardPage() {
   const [goals, setGoals] = useState<DailyGoal[]>([]);
   const [entry, setEntry] = useState<DailyEntry | null>(null);
   const [entries, setEntries] = useState<DailyEntry[]>([]);
+  const [lockIns, setLockIns] = useState<LockInSession[]>([]);
+  const [activeLockIn, setActiveLockIn] = useState<LockInSession | null>(null);
   const [lessons] = useState<LifeLesson[]>(() => readLifeLessons());
   const [lessonOffset, setLessonOffset] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -43,14 +47,18 @@ export default function DashboardPage() {
       try {
         setLoading(true);
         const today = todayISO();
-        const [goalsData, entryData, entriesData] = await Promise.all([
+        const [goalsData, entryData, entriesData, lockInData, activeLockInData] = await Promise.all([
           fetchGoals(),
           fetchEntry(today),
           fetchEntries(),
+          fetchLockInSessions(),
+          fetchActiveLockInSession(),
         ]);
         setGoals(goalsData);
         setEntry(entryData);
         setEntries(entriesData);
+        setLockIns(lockInData);
+        setActiveLockIn(activeLockInData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load dashboard.");
       } finally {
@@ -93,6 +101,13 @@ export default function DashboardPage() {
     [goals, today],
   );
   const todayStats = useMemo(() => goalStats(todayGoals), [todayGoals]);
+  const todayLockIns = useMemo(
+    () =>
+      lockIns.filter((session) =>
+        (session.started_at ?? session.created_at ?? "").startsWith(today),
+      ),
+    [lockIns, today],
+  );
   const focusGoal = useMemo(() => highestPriorityGoal(todayGoals), [todayGoals]);
   const consistency = useMemo(
     () => consistencyScore(todayStats.percentage, entry),
@@ -131,6 +146,7 @@ export default function DashboardPage() {
         <MetricCard label="Consistency Score" value={`${consistency}`} detail="out of 100" />
         <MetricCard label="Insights" value={insights.length} detail="Signals today" />
       </div>
+      <LockInDashboardCard activeSession={activeLockIn} sessions={todayLockIns} />
       <TodayFocusCard goal={focusGoal} />
       <div className="grid gap-6 xl:grid-cols-[1.5fr_0.8fr]">
         <DailyGoalsCard
@@ -161,6 +177,74 @@ export default function DashboardPage() {
       <div className="grid gap-6">
         <SummaryCard entry={entry} />
       </div>
+    </div>
+  );
+}
+
+function LockInDashboardCard({
+  activeSession,
+  sessions,
+}: {
+  activeSession: LockInSession | null;
+  sessions: LockInSession[];
+}) {
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!activeSession?.started_at) return;
+    const interval = window.setInterval(() => setNowMs(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [activeSession?.started_at]);
+
+  if (activeSession?.started_at) {
+    const remainingMs = Math.max(
+      0,
+      new Date(activeSession.started_at).getTime() +
+        activeSession.planned_minutes * 60000 -
+        nowMs,
+    );
+    return (
+      <Card
+        title="Currently Locked In"
+        action={
+          <Link
+            className="rounded-2xl bg-[#34D399] px-4 py-2 text-sm font-semibold text-black transition hover:bg-[#10B981]"
+            href="/lock-in"
+          >
+            Return to Session
+          </Link>
+        }
+      >
+        <p className="text-xl font-semibold text-white">{activeSession.task}</p>
+        <p className="mt-2 text-sm text-[#A1A1AA]">
+          {formatFocusDuration(Math.ceil(remainingMs / 60000))} remaining
+        </p>
+      </Card>
+    );
+  }
+
+  const completed = sessions.filter((session) => session.completed).length;
+  const focusedMinutes = sessions.reduce(
+    (total, session) => total + (session.actual_minutes ?? 0),
+    0,
+  );
+
+  return (
+    <Card title="Lock In / Focus">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <MiniStat label="Focused Today" value={formatFocusDuration(focusedMinutes)} />
+        <MiniStat label="Sessions" value={sessions.length} />
+        <MiniStat label="Completion" value={`${completed}/${sessions.length}`} />
+      </div>
+    </Card>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-[18px] border border-[#1A1A1A] bg-black/25 p-4">
+      <p className="text-xs text-[#A1A1AA]">{label}</p>
+      <p className="mt-2 text-xl font-semibold text-white">{value}</p>
     </div>
   );
 }
@@ -280,6 +364,12 @@ function buildInsights(goals: DailyGoal[], entries: DailyEntry[], today: string)
 function average(values: number[]) {
   if (!values.length) return 0;
   return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function formatFocusDuration(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return hours ? `${hours}h ${remainder}m` : `${minutes}m`;
 }
 
 function CardExerciseXP({ value }: { value: number }) {

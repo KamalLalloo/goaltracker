@@ -21,6 +21,7 @@ type TrendPoint = {
   completionRate: number;
   consistencyScore: number;
   exerciseXp: number;
+  focusMinutes: number;
   dayRating: number | null;
   distraction: number | null;
 };
@@ -62,6 +63,18 @@ export function AnalyticsCharts({ data }: { data: TrendPoint[] }) {
             <YAxis tick={axisStyle} tickLine={false} />
             <Tooltip contentStyle={tooltipStyle} />
             <Bar dataKey="exerciseXp" fill="#A7F3D0" radius={[8, 8, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartFrame>
+
+      <ChartFrame title="Focus Time Per Day">
+        <ResponsiveContainer height={260} width="100%">
+          <BarChart data={data}>
+            <CartesianGrid stroke="#1A1A1A" vertical={false} />
+            <XAxis dataKey="date" tick={axisStyle} tickLine={false} />
+            <YAxis tick={axisStyle} tickLine={false} />
+            <Tooltip contentStyle={tooltipStyle} />
+            <Bar dataKey="focusMinutes" fill="#34D399" radius={[8, 8, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </ChartFrame>

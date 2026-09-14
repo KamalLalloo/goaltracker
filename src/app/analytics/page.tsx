@@ -7,7 +7,8 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { fetchEntries } from "@/lib/actions/entries";
 import { fetchGoals } from "@/lib/actions/goals";
-import type { DailyEntry, DailyGoal } from "@/lib/types";
+import { fetchLockInSessions } from "@/lib/actions/lockIn";
+import type { DailyEntry, DailyGoal, LockInSession } from "@/lib/types";
 import {
   bestStreak,
   completedGoalXP,
@@ -25,6 +26,7 @@ export default function AnalyticsPage() {
   const [filter, setFilter] = useState<Filter>("week");
   const [goals, setGoals] = useState<DailyGoal[]>([]);
   const [entries, setEntries] = useState<DailyEntry[]>([]);
+  const [lockIns, setLockIns] = useState<LockInSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -36,9 +38,10 @@ export default function AnalyticsPage() {
       try {
         setLoading(true);
         setError("");
-        const [goalsData, entriesData] = await Promise.all([
+        const [goalsData, entriesData, lockInData] = await Promise.all([
           fetchGoals(),
           fetchEntries(startDate ?? undefined),
+          fetchLockInSessions(startDate ?? undefined),
         ]);
         setGoals(
           goalsData.filter(
@@ -46,6 +49,11 @@ export default function AnalyticsPage() {
           ),
         );
         setEntries(entriesData.filter((entry) => entry.entry_date <= today));
+        setLockIns(
+          lockInData.filter((session) =>
+            isSessionInRange(session, startDate, today),
+          ),
+        );
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load analytics.");
       } finally {
@@ -56,8 +64,16 @@ export default function AnalyticsPage() {
     load();
   }, [startDate, today]);
 
-  const stats = useMemo(() => buildStats(goals, entries), [entries, goals]);
-  const chartData = useMemo(() => buildTrend(goals, entries), [entries, goals]);
+  const stats = useMemo(() => buildStats(goals, entries, lockIns), [
+    entries,
+    goals,
+    lockIns,
+  ]);
+  const chartData = useMemo(() => buildTrend(goals, entries, lockIns), [
+    entries,
+    goals,
+    lockIns,
+  ]);
 
   if (loading) return <PageShell>Loading analytics...</PageShell>;
   if (error) return <PageShell>{error}</PageShell>;
@@ -109,6 +125,15 @@ export default function AnalyticsPage() {
         <Metric label="Best XP Day" value={stats.bestXpDay} />
         <Metric label="Total Exercise XP" value={stats.totalExerciseXp} />
         <Metric label="Total Goal XP" value={stats.totalGoalXp} />
+        <Metric label="Total Focus Time" value={formatMinutes(stats.totalFocusMinutes)} />
+        <Metric label="Lock In Sessions" value={stats.lockInSessions} />
+        <Metric label="Completed Lock Ins" value={stats.completedLockIns} />
+        <Metric label="Session Completion" value={`${stats.lockInCompletionRate}%`} />
+        <Metric label="Avg Satisfaction" value={stats.averageSatisfaction} />
+        <Metric label="Avg Session Length" value={`${stats.averageSessionLength} min`} />
+        <Metric label="Planned Focus" value={`${stats.plannedFocusMinutes} min`} />
+        <Metric label="Actual Focus" value={`${stats.actualFocusMinutes} min`} />
+        <Metric label="Planned vs Actual" value={`${stats.plannedVsActual}%`} />
       </div>
 
       {chartData.length === 0 ? (
@@ -129,7 +154,11 @@ function Metric({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function buildStats(goals: DailyGoal[], entries: DailyEntry[]) {
+function buildStats(
+  goals: DailyGoal[],
+  entries: DailyEntry[],
+  lockIns: LockInSession[],
+) {
   const stats = goalStats(goals);
   const distractionRatings = entries
     .map((entry) => entry.distraction_rating)
@@ -141,9 +170,21 @@ function buildStats(goals: DailyGoal[], entries: DailyEntry[]) {
     .map((entry) => entry.mood)
     .filter((mood): mood is number => typeof mood === "number");
 
-  const trend = buildTrend(goals, entries);
+  const trend = buildTrend(goals, entries, lockIns);
   const goalXp = completedGoalXP(goals);
   const entryExerciseXp = exerciseXP(entries);
+  const completedLockIns = lockIns.filter((session) => session.completed).length;
+  const satisfactionScores = lockIns
+    .map((session) => session.satisfaction_score)
+    .filter((score): score is number => typeof score === "number");
+  const actualFocusMinutes = lockIns.reduce(
+    (total, session) => total + (session.actual_minutes ?? 0),
+    0,
+  );
+  const plannedFocusMinutes = lockIns.reduce(
+    (total, session) => total + (session.planned_minutes ?? 0),
+    0,
+  );
 
   return {
     totalXp: goalXp + entryExerciseXp,
@@ -160,14 +201,32 @@ function buildStats(goals: DailyGoal[], entries: DailyEntry[]) {
     bestXpDay: Math.max(0, ...trend.map((day) => day.xp)),
     totalExerciseXp: entryExerciseXp,
     totalGoalXp: goalXp,
+    totalFocusMinutes: actualFocusMinutes,
+    lockInSessions: lockIns.length,
+    completedLockIns,
+    lockInCompletionRate: completionPercentage(completedLockIns, lockIns.length),
+    averageSatisfaction: average(satisfactionScores),
+    averageSessionLength: average(
+      lockIns
+        .map((session) => session.actual_minutes)
+        .filter((minutes): minutes is number => typeof minutes === "number"),
+    ),
+    plannedFocusMinutes,
+    actualFocusMinutes,
+    plannedVsActual: completionPercentage(actualFocusMinutes, plannedFocusMinutes),
   };
 }
 
-function buildTrend(goals: DailyGoal[], entries: DailyEntry[]) {
+function buildTrend(
+  goals: DailyGoal[],
+  entries: DailyEntry[],
+  lockIns: LockInSession[],
+) {
   const dates = Array.from(
     new Set([
       ...goals.map((goal) => goal.goal_date),
       ...entries.map((entry) => entry.entry_date),
+      ...lockIns.map((session) => sessionDate(session)).filter(Boolean),
     ]),
   ).sort();
   let cumulativeXp = 0;
@@ -175,6 +234,7 @@ function buildTrend(goals: DailyGoal[], entries: DailyEntry[]) {
   return dates.map((date) => {
     const dayGoals = goals.filter((goal) => goal.goal_date === date);
     const entry = entries.find((item) => item.entry_date === date);
+    const dayLockIns = lockIns.filter((session) => sessionDate(session) === date);
     const exerciseXp = exerciseXPForEntry(entry);
     const dayXp = completedGoalXP(dayGoals) + exerciseXp;
     cumulativeXp += dayXp;
@@ -192,6 +252,10 @@ function buildTrend(goals: DailyGoal[], entries: DailyEntry[]) {
       consistencyScore: consistencyScore(completionRate, entry),
       dayRating: entry?.mood ?? null,
       distraction: entry?.distraction_rating ?? null,
+      focusMinutes: dayLockIns.reduce(
+        (total, session) => total + (session.actual_minutes ?? 0),
+        0,
+      ),
     };
   });
 }
@@ -215,6 +279,21 @@ function rangeStart(filter: Filter) {
   if (filter === "month") date.setMonth(date.getMonth() - 1);
   if (filter === "year") date.setFullYear(date.getFullYear() - 1);
   return date.toISOString().slice(0, 10);
+}
+
+function sessionDate(session: LockInSession) {
+  return (session.started_at ?? session.created_at ?? "").slice(0, 10);
+}
+
+function isSessionInRange(session: LockInSession, start: string | null, today: string) {
+  const date = sessionDate(session);
+  return Boolean(date) && (!start || date >= start) && date <= today;
+}
+
+function formatMinutes(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return hours ? `${hours}h ${remainder}m` : `${minutes}m`;
 }
 
 function PageShell({ children }: { children: React.ReactNode }) {

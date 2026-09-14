@@ -38,6 +38,27 @@ export type FoodEntry = {
   created_at: string | null;
 };
 
+export type LockInSession = {
+  id: string;
+  user_id: string | null;
+  task: string;
+  planned_minutes: number;
+  actual_minutes: number | null;
+  started_at: string | null;
+  completed_at: string | null;
+  completed: boolean | null;
+  satisfaction_score: number | null;
+  comments: string | null;
+  project_id: string | null;
+  daily_goal_id: string | null;
+  created_at: string | null;
+};
+
+export type LockInProjectOption = {
+  id: string;
+  title: string;
+};
+
 export type EntryUpdate = Partial<
   Pick<
     DailyEntry,

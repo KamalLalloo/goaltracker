@@ -10,6 +10,7 @@ import {
   ListTodo,
   LogOut,
   Menu,
+  Timer,
   UserCircle2,
   X,
 } from "lucide-react";
@@ -24,6 +25,7 @@ const items = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/today", label: "Today", icon: CheckCircle2 },
   { href: "/todos", label: "To Do", icon: ListTodo },
+  { href: "/lock-in", label: "Lock In", icon: Timer },
   { href: "/planner", label: "Planner", icon: CalendarClock },
   { href: "/timeline", label: "Timeline", icon: History },
   { href: "/lessons", label: "Lessons", icon: Lightbulb },
